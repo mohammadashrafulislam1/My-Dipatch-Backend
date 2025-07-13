@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import { config as configDotenv } from "dotenv";
+import { userRouter } from "./Router/user.js";
 
 // Routers
 // Add the rest here...
@@ -20,10 +21,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-// app.use("/api/hero", heroRouter);
-// app.use("/api/service", serviceRouter);
-// app.use("/api/about", aboutRouter);
-// Add the rest similarly...
+app.use('/api/signup', userRouter)
 
 // DB Connection
 if (!process.env.MongoDB_User || !process.env.MongoDB_Pass) {
