@@ -14,8 +14,6 @@ const userSchema = new mongoose.Schema({
     email: {
       type: String,
       required: true,
-      unique: true,
-      lowercase: true,
     },
     phone: {
       type: String,
@@ -36,7 +34,7 @@ const userSchema = new mongoose.Schema({
     },
     role: {
       type: String,
-      enum: ['customers', 'driver', 'admin'], // allowed roles
+      enum: ['customer', 'driver', 'admin'], // allowed roles
       default: 'rider', // default role if not specified
     },
   }, { timestamps: true });
