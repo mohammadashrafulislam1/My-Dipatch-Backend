@@ -1,4 +1,4 @@
-import { RideModel } from "../../Model/CustomerModel/Ride";
+import { RideModel } from "../../Model/CustomerModel/Ride.js";
 
 
 // Create a new ride request
@@ -41,3 +41,31 @@ export const requestRide = async (req, res) => {
     res.status(500).json({ message: "Server error creating ride request." });
   }
 };
+
+
+// Get ride history for a specific customer
+export const getRideHistory = async (req, res) => {
+    try {
+      const { customerId } = req.params;
+  
+      if (!customerId) {
+        return res.status(400).json({ message: "Missing customerId parameter." });
+      }
+  
+      // Find all rides for the customer, optionally sorted by date (latest first)
+      const rides = await RideModel.find({ customerId })
+        .sort({ createdAt: -1 }); // newest first
+  
+      if (!rides || rides.length === 0) {
+        return res.status(404).json({ message: "No rides found for this customer." });
+      }
+  
+      res.status(200).json({
+        message: "Ride history retrieved successfully.",
+        rides,
+      });
+    } catch (err) {
+      console.error("Get ride history error:", err);
+      res.status(500).json({ message: "Server error retrieving ride history." });
+    }
+  };

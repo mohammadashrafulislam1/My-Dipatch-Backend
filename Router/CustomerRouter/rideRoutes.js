@@ -1,6 +1,7 @@
 import express from "express";
-import { requestRide } from "../../Controllers/CustomerController/RideController";
+import { getRideHistory, requestRide } from "../../Controllers/CustomerController/RideController.js";
 
 export const rideRouter = express.Router();
 
 rideRouter.post("/request", requestRide);
+rideRouter.get("/history/:customerId", getRideHistory);
