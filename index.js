@@ -21,7 +21,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('/api/signup', userRouter)
+app.use('/api/user', userRouter)
 
 // DB Connection
 if (!process.env.MongoDB_User || !process.env.MongoDB_Pass) {

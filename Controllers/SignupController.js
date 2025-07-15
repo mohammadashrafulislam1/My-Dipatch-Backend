@@ -70,8 +70,6 @@ export const CreateSignupController = async (req, res) => {
 
     // 8. Respond
     res.status(201).json({
-      message: 'User registered successfully',
-      user: newUser,
       token
     });
     
@@ -81,3 +79,75 @@ export const CreateSignupController = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// Log in
+export const login = async (req, res) => {
+  const { email, password } = req.body;
+  console.log(req.body)
+  const user = await UserModel.findOne({ email });
+
+  if (!user) {
+    return res.status(400).json({ message: 'Not Get User In DataBase' });
+  }
+   // Compare Secured (hashed) Password with provided password
+   const passwordMatch = await bcrypt.compare(password, user.password);
+
+   // check is the provided password match with user password
+   if (!passwordMatch) {
+     return res.status(404).json({ error: "Invalid password" });
+   }
+   
+   //  JWT
+   const token = jwt.sign(
+     { email: user.email, id: user._id, role: user.role },
+     process.env.JWT_SECRET,
+     { expiresIn: process.env.JWT_EXPIRES_IN  }
+   );
+
+  res.json({user, token });
+};
+// Get current user:
+export const getCurrentUser = async (req, res, next) => {
+  try {
+    const user = await UserModel.findById(req.decoded.id || req.decoded.userId);
+    console.log("user", req.decoded)
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+// Get all users:
+export const getUsers = async (req, res) =>{
+  try{
+   const users = await UserModel.find();
+   res.status(200).json(users)
+  }
+  catch (e){
+    res.status(500).json({message:"Internal Server Error."})
+  }
+}
+
+// Delete user with id:
+export const deleteUser = async (req, res) =>{
+  const id = req.params.id;
+  try{
+  const user = await UserModel.findById(id);
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+         // 🔥 Delete image from Cloudinary if public_id exists
+    if (user.public_id) {
+      await cloudinary.uploader.destroy(user.public_id);
+    }
+
+      await UserModel.findByIdAndDelete(id);
+    res.status(200).json({ message: "User successfully deleted." });
+  }
+  catch (e){
+    res.status(500).json({message:"Internal Server Error."})
+  }
+}
