@@ -43,6 +43,36 @@ export const requestRide = async (req, res) => {
 };
 
 
+// Update ride status (for admin or driver)
+export const updateRideStatus = async (req, res) => {
+    const { rideId } = req.params;
+    const { status } = req.body;
+  
+    const allowedStatuses = ["pending", "accepted", "in_progress", "completed", "cancelled"];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid status value." });
+    }
+  
+    try {
+      const updated = await RideModel.findByIdAndUpdate(
+        rideId,
+        { status, updatedAt: new Date() },
+        { new: true }
+      );
+  
+      if (!updated) return res.status(404).json({ message: "Ride not found" });
+  
+      if (req.io) {
+        req.io.to(updated.customerId.toString()).emit("ride-status-update", updated);
+      }
+  
+      res.json(updated);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Failed to update ride status" });
+    }
+  };
+  
 // Get ride history for a specific customer
 export const getRideHistory = async (req, res) => {
     try {
