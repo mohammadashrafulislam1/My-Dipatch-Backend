@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import { config as configDotenv } from "dotenv";
 import { userRouter } from "./Router/user.js";
+import { rideRouter } from "./Router/CustomerRouter/rideRoutes.js";
 
 // Routers
 // Add the rest here...
@@ -20,8 +21,15 @@ app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// setup socket.io
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
 // Routes
 app.use('/api/user', userRouter)
+app.use("/api/rides", rideRouter);
 
 // DB Connection
 if (!process.env.MongoDB_User || !process.env.MongoDB_Pass) {
