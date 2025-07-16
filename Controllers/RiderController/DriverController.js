@@ -1,4 +1,4 @@
-import { RideModel } from "../../Model/CustomerModel/Ride";
+import { RideModel } from "../../Model/CustomerModel/Ride.js";
 
 
 // Get available ride requests (for driver to view and accept)
@@ -72,3 +72,54 @@ export const getDriverRideHistory = async (req, res) => {
     res.status(500).json({ message: "Error retrieving ride history." });
   }
 };
+// Get driver earnings summary
+export const getDriverEarnings = async (req, res) => {
+    try {
+      const { driverId } = req.params;
+  
+      if (!driverId) {
+        return res.status(400).json({ message: "Missing driverId parameter." });
+      }
+  
+      const completedRides = await RideModel.find({
+        driverId,
+        status: "completed",
+      });
+  
+      const totalEarnings = completedRides.reduce((sum, ride) => {
+        return sum + (ride.price || 0); // Fallback if price is null
+      }, 0);
+  
+      res.status(200).json({
+        message: "Driver earnings fetched successfully.",
+        totalEarnings,
+        totalCompletedRides: completedRides.length,
+      });
+    } catch (err) {
+      console.error("Driver earnings error:", err);
+      res.status(500).json({ message: "Error fetching driver earnings." });
+    }
+  };
+
+// Enhanced order history with filter (status/date)
+export const getDriverOrderHistory = async (req, res) => {
+    try {
+      const { driverId } = req.params;
+      const { status } = req.query;
+  
+      if (!driverId) {
+        return res.status(400).json({ message: "Missing driverId." });
+      }
+  
+      const filter = { driverId };
+      if (status) filter.status = status;
+  
+      const rides = await RideModel.find(filter).sort({ createdAt: -1 });
+  
+      res.status(200).json({ message: "Order history fetched.", rides });
+    } catch (err) {
+      console.error("Driver order history error:", err);
+      res.status(500).json({ message: "Failed to fetch order history." });
+    }
+  };
+  
