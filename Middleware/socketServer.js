@@ -1,4 +1,5 @@
 import { Server as SocketServer } from "socket.io";
+import { ChatMessage } from "../Model/ChatMessage.js";
 
 let io;
 
@@ -16,6 +17,22 @@ export const initSocket = (server) => {
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
 
+    socket.on("chat-message", async ({ rideId, senderId, senderRole, recipientId, message }) => {
+      try {
+        const newMsg = new ChatMessage({ rideId, senderId, senderRole, recipientId, message });
+        await newMsg.save();
+    
+        // Send message to recipient
+        io.to(recipientId).emit("chat-message", newMsg);
+    
+        // If admin, optionally broadcast or log
+        if (senderRole === "admin") {
+          console.log("Admin sent message:", message);
+        }
+      } catch (err) {
+        console.error("Chat error:", err);
+      }
+    });
     // Handle join event from customer/driver/admin
     socket.on("join", ({ userId, role }) => {
       if (!userId || !role) return;
