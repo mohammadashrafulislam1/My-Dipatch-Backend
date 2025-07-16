@@ -6,6 +6,7 @@ import http from "http";
 import { userRouter } from "./Router/user.js";
 import { rideRouter } from "./Router/CustomerRouter/rideRoutes.js";
 import { initSocket, getIO } from "./Middleware/socketServer.js";
+import { driverRouter } from "./Router/RiderRouter/driverRouter.js";
 
 configDotenv();
 
@@ -34,6 +35,7 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/user', userRouter);
 app.use("/api/rides", rideRouter);
+app.use("/api/driver", driverRouter);
 
 // DB Connection
 if (!process.env.MongoDB_User || !process.env.MongoDB_Pass) {

@@ -42,6 +42,10 @@ const rideSchema = new mongoose.Schema({
     type: String,
     default: ""
   },
+  price: {
+    type: Number,
+    required: false, // Or true if you always calculate upfront
+  },
   status: {
     type: String,
     enum: ["pending", "accepted", "on_the_way", "in_progress", "completed", "cancelled"],

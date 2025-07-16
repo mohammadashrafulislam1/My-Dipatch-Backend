@@ -9,7 +9,8 @@ export const requestRide = async (req, res) => {
       pickup,
       dropoff,
       midwayStops,
-      instructions
+      instructions,
+      price,
     } = req.body;
 
     // Validation (basic)
@@ -22,7 +23,8 @@ export const requestRide = async (req, res) => {
       pickup,
       dropoff,
       midwayStops,
-      instructions
+      instructions,
+      price,
     });
 
     await newRide.save();
