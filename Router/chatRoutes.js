@@ -1,6 +1,6 @@
 import express from "express";
-import { getChatHistoryByRide, uploadChatFile } from "../Controllers/ChatController";
-import { upload } from "../Middleware/upload";
+import { getChatHistoryByRide, uploadChatFile } from "../Controllers/ChatController.js";
+import { upload } from "../Middleware/upload.js";
 
 export const chatRouter = express.Router();
 chatRouter.get("/:rideId", getChatHistoryByRide);
