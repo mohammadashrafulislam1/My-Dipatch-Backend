@@ -8,6 +8,7 @@ import { rideRouter } from "./Router/CustomerRouter/rideRoutes.js";
 import { initSocket, getIO } from "./Middleware/socketServer.js";
 import { driverRouter } from "./Router/RiderRouter/driverRouter.js";
 import { chatRouter } from "./Router/chatRoutes.js";
+import { walletRouter } from "./Router/CustomerRouter/walletRoutes.js";
 
 configDotenv();
 
@@ -38,6 +39,7 @@ app.use('/api/user', userRouter);
 app.use("/api/rides", rideRouter);
 app.use("/api/driver", driverRouter);
 app.use("/api/chat", chatRouter);
+app.use("/api/wallet", walletRouter);
 
 // DB Connection
 if (!process.env.MongoDB_User || !process.env.MongoDB_Pass) {

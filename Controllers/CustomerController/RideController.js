@@ -1,4 +1,6 @@
 import { RideModel } from "../../Model/CustomerModel/Ride.js";
+import { WalletModel } from "../../Model/CustomerModel/Wallet.js";
+import { WalletTransaction } from "../../Model/CustomerModel/WalletTransaction.js";
 
 
 // Create a new ride request
@@ -63,6 +65,21 @@ export const updateRideStatus = async (req, res) => {
       );
   
       if (!updated) return res.status(404).json({ message: "Ride not found" });
+      // Inside updateRideStatus, after updating status:
+if (status === "completed") {
+  const ride = await RideModel.findById(rideId);
+  const wallet = await WalletModel.findOne({ userId: ride.customerId });
+  if (wallet && ride.price && wallet.balance >= ride.price) {
+    wallet.balance -= ride.price;
+    await wallet.save();
+    await WalletTransaction.create({
+      userId: ride.customerId,
+      amount: ride.price,
+      type: "ride_fare",
+      metadata: { rideId }
+    });
+  }
+}
   
       if (req.io) {
         req.io.to(updated.customerId.toString()).emit("ride-status-update", updated);

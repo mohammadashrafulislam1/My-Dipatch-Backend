@@ -1,6 +1,6 @@
 // routes/walletRoutes.js
 import express from "express";
-import { addMoney, getTransactions, getWallet, withdrawMoney } from "../../Controllers/CustomerController/WalletController";
+import { addMoney, getTransactions, getWallet, withdrawMoney } from "../../Controllers/CustomerController/WalletController.js";
 
 export const walletRouter = express.Router();
 
