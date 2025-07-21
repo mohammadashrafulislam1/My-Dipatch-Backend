@@ -118,3 +118,30 @@ export const getRideHistory = async (req, res) => {
       res.status(500).json({ message: "Server error retrieving ride history." });
     }
   };
+
+// Get ride history for a specific Driver
+export const getDriverRideHistory = async (req, res) => {
+    try {
+      const { driverId } = req.params;
+  
+      if (!driverId) {
+        return res.status(400).json({ message: "Missing driverId parameter." });
+      }
+  
+      const rides = await RideModel.find({ driverId })
+        .sort({ createdAt: -1 });
+  
+      if (!rides || rides.length === 0) {
+        return res.status(404).json({ message: "No rides found for this driver." });
+      }
+  
+      res.status(200).json({
+        message: "Driver ride history retrieved successfully.",
+        rides,
+      });
+    } catch (err) {
+      console.error("Get driver ride history error:", err);
+      res.status(500).json({ message: "Server error retrieving driver ride history." });
+    }
+  };
+  

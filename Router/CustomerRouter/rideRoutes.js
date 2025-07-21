@@ -4,6 +4,8 @@ import { getRideHistory, requestRide, updateRideStatus } from "../../Controllers
 export const rideRouter = express.Router();
 
 rideRouter.post("/request", requestRide);
-rideRouter.get("/history/:customerId", getRideHistory);
+rideRouter.get("/customer/:customerId/history", getRideHistory);
 
 rideRouter.put("/status/:rideId", updateRideStatus);
+// Add this line to your existing router
+rideRouter.get("/driver/:driverId/history", getDriverRideHistory);
