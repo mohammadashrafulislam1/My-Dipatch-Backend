@@ -1,6 +1,22 @@
 import { WalletModel } from "../../Model/CustomerModel/Wallet";
 import { WalletTransaction } from "../../Model/CustomerModel/WalletTransaction";
 
+// Inside updateRideStatus, after updating status:
+if (status === "completed") {
+    const ride = await RideModel.findById(rideId);
+    const wallet = await WalletModel.findOne({ userId: ride.customerId });
+    if (wallet && ride.price && wallet.balance >= ride.price) {
+      wallet.balance -= ride.price;
+      await wallet.save();
+      await WalletTransaction.create({
+        userId: ride.customerId,
+        amount: ride.price,
+        type: "ride_fare",
+        metadata: { rideId }
+      });
+    }
+  }
+  
 export const addMoney = async (req, res) => {
     const { userId, amount } = req.body;
     if (!userId || !amount || amount <= 0) return res.status(400).json({ message: "Invalid input." });
