@@ -14,6 +14,24 @@ export const initSocket = (server) => {
   // Store all connected users
   const onlineUsers = {};
 
+    // 🔐 JWT Middleware for Socket.IO
+    io.use((socket, next) => {
+      const token = socket.handshake.auth?.token;
+  
+      if (!token) {
+        return next(new Error("Authentication error: Token missing"));
+      }
+  
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET); // Set in .env
+        socket.user = decoded; // Attach user data to socket
+        next();
+      } catch (err) {
+        return next(new Error("Authentication error: Invalid token"));
+      }
+    });
+  
+
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
 

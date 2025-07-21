@@ -50,7 +50,7 @@ export const updateRideStatus = async (req, res) => {
     const { rideId } = req.params;
     const { status } = req.body;
   
-    const allowedStatuses = ["pending", "accepted", "in_progress", "completed", "cancelled"];
+    const allowedStatuses = ["pending", "accepted", "on_the_way", "in_progress", "completed", "cancelled"];
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({ message: "Invalid status value." });
     }
