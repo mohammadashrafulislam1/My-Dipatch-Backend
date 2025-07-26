@@ -44,6 +44,7 @@ app.use("/api/driverwallet", driverWalletRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/wallet", walletRouter);
 app.use("/api/support", supportRouter);
+app.use("/api/admin", supportRouter);
 
 // DB Connection
 if (!process.env.MongoDB_User || !process.env.MongoDB_Pass) {
