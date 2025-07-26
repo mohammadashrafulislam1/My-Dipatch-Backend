@@ -10,6 +10,7 @@ import { driverRouter } from "./Router/RiderRouter/driverRouter.js";
 import { chatRouter } from "./Router/chatRoutes.js";
 import { walletRouter } from "./Router/CustomerRouter/walletRoutes.js";
 import { driverWalletRouter } from "./Router/RiderRouter/driverWalletRoutes.js";
+import { supportRouter } from "./Router/supportRoutes.js";
 
 configDotenv();
 
@@ -42,6 +43,7 @@ app.use("/api/driver", driverRouter);
 app.use("/api/driverwallet", driverWalletRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/wallet", walletRouter);
+app.use("/api/support", supportRouter);
 
 // DB Connection
 if (!process.env.MongoDB_User || !process.env.MongoDB_Pass) {
