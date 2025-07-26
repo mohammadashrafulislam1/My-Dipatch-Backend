@@ -9,6 +9,7 @@ import { initSocket, getIO } from "./Middleware/socketServer.js";
 import { driverRouter } from "./Router/RiderRouter/driverRouter.js";
 import { chatRouter } from "./Router/chatRoutes.js";
 import { walletRouter } from "./Router/CustomerRouter/walletRoutes.js";
+import { driverWalletRouter } from "./Router/RiderRouter/driverWalletRoutes.js";
 
 configDotenv();
 
@@ -38,6 +39,7 @@ app.use((req, res, next) => {
 app.use('/api/user', userRouter);
 app.use("/api/rides", rideRouter);
 app.use("/api/driver", driverRouter);
+app.use("/api/driverwallet", driverWalletRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/wallet", walletRouter);
 
