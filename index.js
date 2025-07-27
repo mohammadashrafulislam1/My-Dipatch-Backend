@@ -11,6 +11,7 @@ import { chatRouter } from "./Router/chatRoutes.js";
 import { walletRouter } from "./Router/CustomerRouter/walletRoutes.js";
 import { driverWalletRouter } from "./Router/RiderRouter/driverWalletRoutes.js";
 import { supportRouter } from "./Router/supportRoutes.js";
+import { reviewRouter } from "./Router/reviewRoutes.js";
 
 configDotenv();
 
@@ -45,6 +46,7 @@ app.use("/api/chat", chatRouter);
 app.use("/api/wallet", walletRouter);
 app.use("/api/support", supportRouter);
 app.use("/api/admin", supportRouter);
+app.use("/api/review", reviewRouter);
 
 // DB Connection
 if (!process.env.MongoDB_User || !process.env.MongoDB_Pass) {

@@ -37,6 +37,14 @@ const userSchema = new mongoose.Schema({
       enum: ['customer', 'driver', 'admin'], // allowed roles
       default: 'rider', // default role if not specified
     },
+    rating: {
+      type: Number,
+      default: 0
+    },
+    ratingCount: {
+      type: Number,
+      default: 0
+    }
   }, { timestamps: true });
   
 export const UserModel  = mongoose.model('User', userSchema);
