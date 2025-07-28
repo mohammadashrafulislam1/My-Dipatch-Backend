@@ -37,6 +37,12 @@ const userSchema = new mongoose.Schema({
       enum: ['customer', 'driver', 'admin'], // allowed roles
       default: 'rider', // default role if not specified
     },
+    // ✅ New field for driver status
+  status: {
+    type: String,
+    enum: ['active', 'inactive'],
+    default: undefined // we’ll set it manually for drivers
+  },
     rating: {
       type: Number,
       default: 0

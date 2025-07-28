@@ -56,7 +56,8 @@ export const CreateSignupController = async (req, res) => {
       password: hashedPassword,
       profileImage,
       public_id,
-      role
+      role,
+      ...(role === 'driver' && { status: 'inactive' }) // ✅ Only for drivers
     });
 
     await newUser.save();
