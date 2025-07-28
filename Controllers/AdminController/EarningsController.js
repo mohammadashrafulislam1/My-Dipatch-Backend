@@ -1,5 +1,5 @@
-import { EarningModel } from "../../Model/AdminModel/Earning";
-import { UserModel } from "../../Model/User";
+import { EarningModel } from "../../Model/AdminModel/Earning.js";
+import { UserModel } from "../../Model/User.js";
 
 
 // Get earnings with filters

@@ -1,10 +1,6 @@
 import express from "express";
-import { 
-  getPricingSettings, 
-  updatePricingSettings,
-  getPricingHistory
-} from "../controllers/PricingController.js";
-import { adminAuth } from "../middleware/authMiddleware.js"; // Admin auth middleware
+import { getPricingHistory, getPricingSettings, 
+    updatePricingSettings } from "../../Controllers/AdminController/PricingController.js";
 
 export const pricingRouter = express.Router();
 
@@ -12,7 +8,7 @@ export const pricingRouter = express.Router();
 pricingRouter.get("/", getPricingSettings);
 
 // Update pricing settings (admin only)
-pricingRouter.put("/", adminAuth, updatePricingSettings);
+pricingRouter.put("/", updatePricingSettings);
 
 // Get pricing history (admin only)
-pricingRouter.get("/history", adminAuth, getPricingHistory);
+pricingRouter.get("/history", getPricingHistory);

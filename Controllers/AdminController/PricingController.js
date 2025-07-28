@@ -1,4 +1,4 @@
-import { PricingModel } from "../../Model/AdminModel/Pricing";
+import { PricingModel } from "../../Model/AdminModel/Pricing.js";
 
 
 // Get current pricing settings
@@ -27,7 +27,7 @@ export const updatePricingSettings = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    if (isNaN(pricePerKm) {
+    if (isNaN(pricePerKm)) {
       return res.status(400).json({ message: "Price per km must be a number" });
     }
 
