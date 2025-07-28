@@ -132,6 +132,39 @@ export const getUsers = async (req, res) =>{
   }
 }
 
+// Change user status (admin only)
+export const updateUserStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  try {
+    const user = await UserModel.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (user.role !== 'driver') {
+      return res.status(400).json({ message: "Status can only be updated for drivers." });
+    }
+    
+
+    if (!['active', 'inactive'].includes(status)) {
+      return res.status(400).json({ message: "Invalid status value." });
+    }
+
+    user.status = status;
+    await user.save();
+
+    res.status(200).json({ message: `Driver status updated to ${status}.`, user });
+  } catch (error) {
+    console.error("Update status error:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+
+
 // Delete user with id:
 export const deleteUser = async (req, res) =>{
   const id = req.params.id;
