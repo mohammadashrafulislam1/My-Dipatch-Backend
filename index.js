@@ -15,6 +15,7 @@ import { reviewRouter } from "./Router/reviewRoutes.js";
 import { pricingRouter } from "./Router/AdminRouter/pricingRoutes.js";
 import { walletRouterr } from "./Router/AdminRouter/walletRoutes.js";
 import { policyRouter } from "./Router/policyRoutes.js";
+import { faqRouter } from "./Router/faqRoutes.js";
 
 configDotenv();
 
@@ -53,6 +54,7 @@ app.use("/api/review", reviewRouter);
 app.use("/api/admin/pricing", pricingRouter);
 app.use("/api/admin/wallet", walletRouterr);
 app.use("/api/policy", policyRouter);
+app.use("/api/faqs", faqRouter);
 
 // DB Connection
 if (!process.env.MongoDB_User || !process.env.MongoDB_Pass) {

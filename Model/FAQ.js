@@ -39,4 +39,4 @@ FAQSchema.pre('save', function(next) {
   next();
 });
 
-export default mongoose.model('FAQ', FAQSchema);
+export const FaqModel = mongoose.model('FAQ', FAQSchema);
