@@ -1,4 +1,5 @@
-import { CreateSignupController, deleteUser, getCurrentUser, getUsers, login } from "../Controllers/SignupController.js";
+import { CreateSignupController, deleteUser, getCurrentUser, 
+    getUsers, login, updateUserStatus } from "../Controllers/SignupController.js";
 import { upload } from "../Middleware/upload.js";
 import express from "express";
 
@@ -10,3 +11,5 @@ userRouter.post('/login', login)
 userRouter.get('/me', getCurrentUser);
 userRouter.get('/', getUsers)
 userRouter.delete('/:id',  deleteUser)
+// PUT /api/users/:id/status
+// userRouter.put('/:id/status', isAuthenticated, isAdmin, updateUserStatus);
