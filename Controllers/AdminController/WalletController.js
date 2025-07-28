@@ -1,5 +1,5 @@
-import { PricingModel } from "../../Model/AdminModel/Pricing";
-import { TransactionModel } from "../../Model/AdminModel/Wallet";
+import { PricingModel } from "../../Model/AdminModel/Pricing.js";
+import { TransactionModel } from "../../Model/AdminModel/Wallet.js";
 
 
 // Get wallet dashboard summary

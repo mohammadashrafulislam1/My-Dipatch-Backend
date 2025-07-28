@@ -20,7 +20,23 @@ const FAQSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  },
+  order: {
+    type: Number,
+    default: 0
   }
+});
+
+// Add text index for searching
+FAQSchema.index({ question: 'text', answer: 'text' });
+
+FAQSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  next();
 });
 
 export default mongoose.model('FAQ', FAQSchema);

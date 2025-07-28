@@ -1,4 +1,4 @@
-import { PolicyModel } from "../Model/Policy";
+import { PolicyModel } from "../Model/Policy.js";
 
 
 // Get both policies

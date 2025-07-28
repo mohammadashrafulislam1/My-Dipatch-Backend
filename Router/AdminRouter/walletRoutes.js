@@ -1,10 +1,10 @@
 import express from "express";
-import { getTransactionHistory, getWalletDashboard } from "../../Controllers/AdminController/WalletController";
+import { getTransactionHistory, getWalletDashboard } from "../../Controllers/AdminController/WalletController.js";
 
-export const walletRouter = express.Router();
+export const walletRouterr = express.Router();
 
 // Get wallet dashboard data.
-walletRouter.get("/dashboard", getWalletDashboard);
+walletRouterr.get("/dashboard", getWalletDashboard);
 
 // Get transaction history with filters
-walletRouter.get("/transactions", getTransactionHistory);
+walletRouterr.get("/transactions", getTransactionHistory);
