@@ -13,6 +13,7 @@ import { driverWalletRouter } from "./Router/RiderRouter/driverWalletRoutes.js";
 import { supportRouter } from "./Router/supportRoutes.js";
 import { reviewRouter } from "./Router/reviewRoutes.js";
 import { pricingRouter } from "./Router/AdminRouter/pricingRoutes.js";
+import { walletRouter } from "./Router/AdminRouter/walletRoutes.js";
 
 configDotenv();
 
@@ -48,7 +49,8 @@ app.use("/api/wallet", walletRouter);
 app.use("/api/support", supportRouter);
 app.use("/api/admin", supportRouter);
 app.use("/api/review", reviewRouter);
-app.use("/api/pricing", pricingRouter);
+app.use("/api/admin/pricing", pricingRouter);
+app.use("/api/admin/wallet", walletRouter);
 
 // DB Connection
 if (!process.env.MongoDB_User || !process.env.MongoDB_Pass) {

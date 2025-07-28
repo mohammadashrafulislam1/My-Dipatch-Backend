@@ -1,6 +1,7 @@
 import { RideModel } from "../../Model/CustomerModel/Ride.js";
 import { WalletModel } from "../../Model/CustomerModel/Wallet.js";
 import { WalletTransaction } from "../../Model/CustomerModel/WalletTransaction.js";
+import { createTransaction } from "../AdminController/WalletController.js";
 
 
 // Create a new ride request
@@ -79,6 +80,8 @@ if (status === "completed") {
       metadata: { rideId }
     });
   }
+   // Create wallet transaction
+   await createTransaction(ride);
 }
   
       if (req.io) {
