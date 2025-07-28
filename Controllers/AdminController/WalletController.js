@@ -1,6 +1,6 @@
-import { TransactionModel } from "../models/Wallet.js";
-import { PricingModel } from "../models/Pricing.js";
-import { RideModel } from "../models/Ride.js";
+import { PricingModel } from "../../Model/AdminModel/Pricing";
+import { TransactionModel } from "../../Model/AdminModel/Wallet";
+
 
 // Get wallet dashboard summary
 export const getWalletDashboard = async (req, res) => {
