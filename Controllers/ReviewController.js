@@ -1,6 +1,6 @@
-import { RideModel } from "../Model/CustomerModel/Ride";
-import { ReviewModel } from "../Model/Review";
-import { UserModel } from "../Model/User";
+import { RideModel } from "../Model/CustomerModel/Ride.js";
+import { ReviewModel } from "../Model/Review.js";
+import { UserModel } from "../Model/User.js";
 
 
 // Submit a review for a completed ride

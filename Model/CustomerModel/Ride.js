@@ -63,4 +63,22 @@ rideSchema.pre("save", function (next) {
   next();
 });
 
+// Add to rideSchema in Ride.js
+rideSchema.virtual("customer", {
+  ref: "User",
+  localField: "customerId",
+  foreignField: "_id",
+  justOne: true
+});
+
+rideSchema.virtual("driver", {
+  ref: "User",
+  localField: "driverId",
+  foreignField: "_id",
+  justOne: true
+});
+
+// Enable virtuals in toJSON output
+rideSchema.set("toJSON", { virtuals: true });
+
 export const RideModel = mongoose.model("Ride", rideSchema);

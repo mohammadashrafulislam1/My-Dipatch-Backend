@@ -1,5 +1,5 @@
 import express from "express";
-import { getDriverReviews, submitReview } from "../Controllers/ReviewController";
+import { getDriverReviews, submitReview } from "../Controllers/ReviewController.js";
 
 export const reviewRouter = express.Router();
 
