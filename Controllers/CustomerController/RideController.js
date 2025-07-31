@@ -32,10 +32,16 @@ export const requestRide = async (req, res) => {
 
     await newRide.save();
 
-    // Emit to Socket.IO (if available)
+    // 🔔 Notify all active drivers
     if (req.io) {
-      req.io.emit("new-ride-request", newRide); // Notify all drivers
+      const activeDrivers = await UserModel.find({ role: "driver", status: "active" });
+
+      activeDrivers.forEach((driver) => {
+        // emit to driver room based on driver._id
+        req.io.to(driver._id.toString()).emit("new-ride-request", newRide);
+      });
     }
+
 
     res.status(201).json({
       message: "Ride request created successfully.",

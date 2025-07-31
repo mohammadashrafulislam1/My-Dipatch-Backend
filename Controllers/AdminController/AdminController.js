@@ -30,7 +30,8 @@ export const assignDriverToRide = async (req, res) => {
     // Check if driver exists
     const driver = await UserModel.findOne({ 
       _id: driverId, 
-      role: "driver" 
+      role: "driver" ,
+      status: "active" // ✅ Ensure driver is active
     });
     
     if (!driver) {
