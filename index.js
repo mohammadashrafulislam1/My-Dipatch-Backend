@@ -10,12 +10,12 @@ import { driverRouter } from "./Router/RiderRouter/driverRouter.js";
 import { chatRouter } from "./Router/chatRoutes.js";
 import { walletRouter } from "./Router/CustomerRouter/walletRoutes.js";
 import { driverWalletRouter } from "./Router/RiderRouter/driverWalletRoutes.js";
-import { supportRouter } from "./Router/supportRoutes.js";
 import { reviewRouter } from "./Router/reviewRoutes.js";
 import { pricingRouter } from "./Router/AdminRouter/pricingRoutes.js";
 import { walletRouterr } from "./Router/AdminRouter/walletRoutes.js";
 import { policyRouter } from "./Router/policyRoutes.js";
 import { faqRouter } from "./Router/faqRoutes.js";
+import { supportRouter } from "./Router/supportRoutes.js";
 
 configDotenv();
 
@@ -49,7 +49,6 @@ app.use("/api/driverwallet", driverWalletRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/wallet", walletRouter);
 app.use("/api/support", supportRouter);
-app.use("/api/admin", supportRouter);
 app.use("/api/review", reviewRouter);
 app.use("/api/admin/pricing", pricingRouter);
 app.use("/api/admin/wallet", walletRouterr);
