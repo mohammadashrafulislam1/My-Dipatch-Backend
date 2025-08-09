@@ -1,8 +1,11 @@
+import { FaqModel } from "../Model/FAQ";
+import { SupportTicket } from "../Model/SupportTicket";
+
 // Driver/Customer Support Center
 export const getSupportCenter = async (req, res) => {
     try {
       const tickets = await SupportTicket.find({ userId: req.user.id }).sort('-createdAt');
-      const faqs = await FAQ.find({ category: req.user.type });
+      const faqs = await FaqModel.find({ category: req.user.type });
       
       res.render('support/center', {
         tickets,
@@ -32,8 +35,8 @@ export const getSupportCenter = async (req, res) => {
   // Admin FAQ Management
   export const manageFAQs = async (req, res) => {
     try {
-      const customerFAQs = await FAQ.find({ category: 'customer' });
-      const driverFAQs = await FAQ.find({ category: 'driver' });
+      const customerFAQs = await FaqModel.find({ category: 'customer' });
+      const driverFAQs = await FaqModel.find({ category: 'driver' });
       
       res.render('admin/faqs', {
         customerFAQs,
@@ -46,7 +49,7 @@ export const getSupportCenter = async (req, res) => {
   
   export const createFAQ = async (req, res) => {
     try {
-      const newFAQ = new FAQ({
+      const newFAQ = new FaqModel({
         category: req.body.category,
         question: req.body.question,
         answer: req.body.answer

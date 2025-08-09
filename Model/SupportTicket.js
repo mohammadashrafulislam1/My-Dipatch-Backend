@@ -13,4 +13,4 @@ const SupportTicketSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-export default mongoose.model('SupportTicket', SupportTicketSchema);
+export const SupportTicket  = mongoose.model('SupportTicket', SupportTicketSchema);
