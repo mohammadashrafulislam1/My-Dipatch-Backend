@@ -73,6 +73,6 @@ mongoose
 app.get("/", (req, res) => res.send("Hello, World!"));
 
 // Start the server using HTTP server (not app.listen)
-server.listen(port, () => {
+app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
