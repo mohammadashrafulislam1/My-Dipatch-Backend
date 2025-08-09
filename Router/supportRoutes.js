@@ -1,6 +1,6 @@
 // routes/supportRoutes.js
 import express from 'express';
-import { createTicket, getSupportCenter } from '../Controllers/supportController.js';
+import { createTicket, getSupportCenter } from '../Controllers/SupportController.js';
 
 export const supportRouter = express.Router();
 
