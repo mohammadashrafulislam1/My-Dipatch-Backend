@@ -1,6 +1,7 @@
 import { RideModel } from "../../Model/CustomerModel/Ride.js";
 import { WalletModel } from "../../Model/CustomerModel/Wallet.js";
 import { WalletTransaction } from "../../Model/CustomerModel/WalletTransaction.js";
+import { UserModel } from "../../Model/User.js";
 import { createTransaction } from "../AdminController/WalletController.js";
 
 
@@ -34,13 +35,18 @@ export const requestRide = async (req, res) => {
 
     // 🔔 Notify all active drivers
     if (req.io) {
+      console.log("🔔 Emitting new-ride-request to active drivers...");
+    
       const activeDrivers = await UserModel.find({ role: "driver", status: "active" });
-
+    
       activeDrivers.forEach((driver) => {
-        // emit to driver room based on driver._id
+        console.log(`📢 Emitting to driver: ${driver._id.toString()}`);
         req.io.to(driver._id.toString()).emit("new-ride-request", newRide);
       });
+    } else {
+      console.log("❌ Socket.io instance not found on req.io");
     }
+    
 
 
     res.status(201).json({

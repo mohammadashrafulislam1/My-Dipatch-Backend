@@ -71,6 +71,7 @@ export const CreateSignupController = async (req, res) => {
 
     // 8. Respond
     res.status(201).json({
+      newUser,
       token
     });
     
