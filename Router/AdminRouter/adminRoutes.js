@@ -1,7 +1,7 @@
 // routes/adminRoutes.js
 import express from 'express';
-import { createFAQ, manageFAQs } from '../../Controllers/supportController.js';
 import { assignDriverToRide, getAllDrivers, getPendingRides } from '../../Controllers/AdminController/AdminController.js';
+import { createFAQ, manageFAQs } from '../../Controllers/SupportController.js';
 // import adminMiddleware from '../middleware/admin.js';
 
 export const adminRouter = express.Router();

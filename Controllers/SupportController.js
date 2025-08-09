@@ -1,5 +1,5 @@
-import { FaqModel } from "../Model/FAQ";
-import { SupportTicket } from "../Model/SupportTicket";
+import { FaqModel } from "../Model/FAQ.js";
+import { SupportTicket } from "../Model/SupportTicket.js";
 
 // Driver/Customer Support Center
 export const getSupportCenter = async (req, res) => {
