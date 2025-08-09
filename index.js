@@ -30,16 +30,16 @@ app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// const server = http.createServer(app);
+const server = http.createServer(app);
 
 // Initialize socket.io with the HTTP server
-// const io = initSocket(server);
+const io = initSocket(server);
 
 // Middleware to provide io in routes
-// app.use((req, res, next) => {
-//   req.io = io;
-//   next();
-// });
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 
 // Routes
 app.use('/api/user', userRouter);
@@ -73,6 +73,6 @@ mongoose
 app.get("/", (req, res) => res.send("Hello, World!"));
 
 // Start the server using HTTP server (not app.listen)
-// app.listen(port, () => {
-//   console.log(`Server running on http://localhost:${port}`);
-// });
+app.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
+});
