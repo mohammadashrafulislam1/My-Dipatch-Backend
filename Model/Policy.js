@@ -47,4 +47,4 @@ policySchema.statics.initialize = async function() {
   }
 };
 
-export const PolicyModel = mongoose.model("Policy", policySchema);
+export const PolicyModel = mongoose.model('Policy', policySchema);

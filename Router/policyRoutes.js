@@ -1,5 +1,5 @@
 import express from "express";
-import { getPolicies, getPolicyHistory, updatePolicy } from "../controllers/PolicyController.js";
+import { getPolicies, getPolicyHistory, updatePolicy } from "../Controllers/PolicyController.js";
 
 export const policyRouter = express.Router();
 
