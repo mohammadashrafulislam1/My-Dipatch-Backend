@@ -24,6 +24,7 @@ const port = process.env.PORT || 3000;
 
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:5174",
   "https://my-dipatch.vercel.app"
 ];
 
@@ -73,6 +74,7 @@ mongoose
 app.get("/", (req, res) => res.send("Hello, World!"));
 
 // Start the server using HTTP server (not app.listen)
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
+

@@ -1,3 +1,4 @@
+import { onlineUsers } from "../../Middleware/socketServer.js";
 import { RideModel } from "../../Model/CustomerModel/Ride.js";
 import { WalletModel } from "../../Model/CustomerModel/Wallet.js";
 import { WalletTransaction } from "../../Model/CustomerModel/WalletTransaction.js";
@@ -16,9 +17,9 @@ export const requestRide = async (req, res) => {
       instructions,
       price,
     } = req.body;
-
+     console.log( req.body)
     // Validation (basic)
-    if (!customerId || !pickup || !dropoff) {
+    if (!customerId || !pickup ) {
       return res.status(400).json({ message: "Missing required fields." });
     }
 
@@ -33,19 +34,27 @@ export const requestRide = async (req, res) => {
 
     await newRide.save();
 
-    // 🔔 Notify all active drivers
-    if (req.io) {
-      console.log("🔔 Emitting new-ride-request to active drivers...");
-    
-      const activeDrivers = await UserModel.find({ role: "driver", status: "active" });
-    
-      activeDrivers.forEach((driver) => {
-        console.log(`📢 Emitting to driver: ${driver._id.toString()}`);
-        req.io.to(driver._id.toString()).emit("new-ride-request", newRide);
-      });
-    } else {
-      console.log("❌ Socket.io instance not found on req.io");
-    }
+   // Notify only active drivers who are online
+   if (req.io) {
+    console.log("🔔 Emitting new-ride-request to active connected drivers...");
+
+    // Query only active drivers from DB
+    const activeDrivers = await UserModel.find({ role: "driver", status: "active" });
+
+    activeDrivers.forEach(driver => {
+      const userId = driver._id.toString();
+      console.log(onlineUsers)
+      if (onlineUsers[userId]) {
+        req.io.to(userId).emit("new-ride-request", newRide);
+        console.log(`📢 Emitted new-ride-request to driver ${userId}`);
+      } else {
+        console.log(`⚠️ Driver ${userId} not connected, skipping emit`);
+      }
+    });
+  } else {
+    console.log("❌ Socket.io instance not found on req.io");
+  }
+
     
 
 

@@ -1,21 +1,24 @@
 import { Server as SocketServer } from "socket.io";
 import { ChatMessage } from "../Model/ChatMessage.js";
+import { RideModel } from "../Model/CustomerModel/Ride.js";
 
 let io;
+
+  // Store all connected users
+  export const onlineUsers = {};
+  console.log(onlineUsers)
 
 export const initSocket = (server) => {
   io = new SocketServer(server, {
     cors: {
-      origin: "*", // For dev, allow all. You should restrict this in production.
+      origin: ["http://localhost:5173", "http://localhost:5174", "https://my-dipatch.vercel.app"],
       methods: ["GET", "POST", "PUT"],
+      credentials: true,
     },
   });
 
-  // Store all connected users
-  const onlineUsers = {};
-
     // 🔐 JWT Middleware for Socket.IO
-    io.use((socket, next) => {
+    /*io.use((socket, next) => {
       const token = socket.handshake.auth?.token;
   
       if (!token) {
@@ -23,13 +26,13 @@ export const initSocket = (server) => {
       }
   
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET); // Set in .env
-        socket.user = decoded; // Attach user data to socket
+        const decoded = jwt.verify(token, process.env.JWT_SECRET); 
+        socket.user = decoded; 
         next();
       } catch (err) {
         return next(new Error("Authentication error: Invalid token"));
       }
-    });
+    });*/
   
 
   io.on("connection", (socket) => {
@@ -60,15 +63,24 @@ export const initSocket = (server) => {
     });
     
     // Handle join event from customer/driver/admin
-    socket.on("join", ({ userId, role }) => {
+    socket.on("join", async ({ userId, role }) => {
       if (!userId || !role) return;
-
+    
       onlineUsers[userId] = { socketId: socket.id, role };
-      socket.join(userId); // Join room by userId (for direct messages)
-      socket.join(role);   // Join room by role (for broadcasting by role)
-
+      socket.join(userId);
+      socket.join(role);
+    
       console.log(`${role} [${userId}] joined socket room(s)`);
+    
+      if (role === "driver") {
+        // Send all pending rides to this driver on connect
+        const pendingRides = await RideModel.find({ status: "pending" });
+        pendingRides.forEach(ride => {
+          io.to(userId).emit("new-ride-request", ride);
+        });
+      }
     });
+    
 
     // Driver accepts a ride -> notify customer
     socket.on("accept-ride", ({ rideId, driverId, customerId }) => {
@@ -91,7 +103,9 @@ export const initSocket = (server) => {
 
     // Notify all admins of new ride requests (optional)
     socket.on("new-ride", (rideData) => {
+ console.log("rideData:", rideData)
       io.to("admin").emit("new-ride-request", rideData);
+      io.to("driver").emit("new-ride-request", rideData);  // notify all drivers)
     });
 
     // Handle disconnect
@@ -105,7 +119,23 @@ export const initSocket = (server) => {
       }
     });
   });
-
+  // io.on("connection", (socket) => {
+  //   console.log("Socket connected:", socket.id);
+  
+  //   // Emit a test notification to your driver ID after 3 seconds
+  //   setTimeout(() => {
+  //     io.to("6897f362d0b0f0a2da455188").emit("new-ride-request", {
+  //       pickup: { address: "123 Test St" },
+  //       dropoff: { address: "456 Demo Ave" },
+  //       price: 15,
+  //       requestId: "test123"
+  //     });
+  //     console.log("Sent test ride request to driver");
+  //   }, 3000);
+  
+  //   // other handlers...
+  // });
+  
   return io;
 };
 

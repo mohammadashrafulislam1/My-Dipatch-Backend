@@ -35,7 +35,7 @@ const userSchema = new mongoose.Schema({
     role: {
       type: String,
       enum: ['customer', 'driver', 'admin'], // allowed roles
-      default: 'rider', // default role if not specified
+      default: 'driver', // default role if not specified
     },
     // ✅ New field for driver status
   status: {
