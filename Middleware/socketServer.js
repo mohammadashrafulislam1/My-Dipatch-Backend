@@ -1,6 +1,7 @@
 import { Server as SocketServer } from "socket.io";
 import { ChatMessage } from "../Model/ChatMessage.js";
 import { RideModel } from "../Model/CustomerModel/Ride.js";
+import { startPendingRideNotifier } from "./startPendingRideNotifier.js";
 
 let io;
 
@@ -16,7 +17,7 @@ export const initSocket = (server) => {
       credentials: true,
     },
   });
-
+  startPendingRideNotifier(io);
     // 🔐 JWT Middleware for Socket.IO
     /*io.use((socket, next) => {
       const token = socket.handshake.auth?.token;
