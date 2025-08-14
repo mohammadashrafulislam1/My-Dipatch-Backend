@@ -31,5 +31,5 @@ export const startPendingRideNotifier = (socketIoInstance) => {
     } catch (err) {
       console.error('Error in pending ride notifier:', err);
     }
-  }, 30 * 1000); // every 10 seconds
+  }, 40 * 1000); // every 10 seconds
 };
