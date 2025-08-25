@@ -5,13 +5,39 @@ import { UserModel } from "../Model/User.js";
 import { cloudinary } from "../utils/cloudinary.js";
 
 // Cloudinary uploader
-const uploadImage = async (filePath) => {
+// const uploadImage = async (filePath) => {
+//   try {
+//     const result = await cloudinary.uploader.upload(filePath, {
+//       folder: 'localRun/profileImage'
+//     });
+//     fs.unlinkSync(filePath); // Remove temp file
+//     return { url: result.secure_url, public_id: result.public_id };
+//   } catch (error) {
+//     console.error('Cloudinary upload error:', error);
+//     throw new Error('Error uploading image');
+//   }
+// };
+// Cloudinary uploader for buffer
+const uploadImage = async (buffer) => {
   try {
-    const result = await cloudinary.uploader.upload(filePath, {
-      folder: 'localRun/profileImage'
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'localRun/profileImage',
+          resource_type: 'image'
+        },
+        (error, result) => {
+          if (error) {
+            console.error('Cloudinary upload error:', error);
+            reject(new Error('Error uploading image'));
+          } else {
+            resolve({ url: result.secure_url, public_id: result.public_id });
+          }
+        }
+      );
+      
+      uploadStream.end(buffer);
     });
-    fs.unlinkSync(filePath); // Remove temp file
-    return { url: result.secure_url, public_id: result.public_id };
   } catch (error) {
     console.error('Cloudinary upload error:', error);
     throw new Error('Error uploading image');
