@@ -12,7 +12,7 @@ let io;
 export const initSocket = (server) => {
   io = new SocketServer(server, {
     cors: {
-      origin: ["http://localhost:5173", "http://localhost:5174", "https://my-dipatch.vercel.app"],
+      origin: ["http://localhost:5173", "http://localhost:5174", "https://my-dipatch.vercel.app", "https://my-dipatch-driver.vercel.app"],
       methods: ["GET", "POST", "PUT"],
       credentials: true,
     },
