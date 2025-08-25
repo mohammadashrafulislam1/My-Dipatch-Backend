@@ -1,45 +1,23 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken"; // 🔥 You forgot this!
+import jwt from "jsonwebtoken";
 import fs from "fs";
 import { UserModel } from "../Model/User.js";
 import { cloudinary } from "../utils/cloudinary.js";
 
 // Cloudinary uploader
-// const uploadImage = async (filePath) => {
-//   try {
-//     const result = await cloudinary.uploader.upload(filePath, {
-//       folder: 'localRun/profileImage'
-//     });
-//     fs.unlinkSync(filePath); // Remove temp file
-//     return { url: result.secure_url, public_id: result.public_id };
-//   } catch (error) {
-//     console.error('Cloudinary upload error:', error);
-//     throw new Error('Error uploading image');
-//   }
-// };
-// Cloudinary uploader for buffer
-const uploadImage = async (buffer) => {
+const uploadImage = async (filePath) => {
   try {
-    return new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: 'localRun/profileImage',
-          resource_type: 'image'
-        },
-        (error, result) => {
-          if (error) {
-            console.error('Cloudinary upload error:', error);
-            reject(new Error('Error uploading image'));
-          } else {
-            resolve({ url: result.secure_url, public_id: result.public_id });
-          }
-        }
-      );
-      
-      uploadStream.end(buffer);
+    const result = await cloudinary.uploader.upload(filePath, {
+      folder: 'localRun/profileImage'
     });
+    fs.unlinkSync(filePath); // Remove temp file
+    return { url: result.secure_url, public_id: result.public_id };
   } catch (error) {
     console.error('Cloudinary upload error:', error);
+    // 💡 Re-throw the error with a more specific message if it's an 'Empty file' error
+    if (error.http_code === 400 && error.message.includes('Empty file')) {
+      throw new Error('Uploaded file is empty or invalid.');
+    }
     throw new Error('Error uploading image');
   }
 };
@@ -57,13 +35,22 @@ export const CreateSignupController = async (req, res) => {
 
     // 3. Check if user exists
     const existingUserWithEmail = await UserModel.findOne({ email: emailToCheck });
-  if (existingUserWithEmail) {
-    return res.status(400).json({ error: "User with the same email already exists." });
-  }
+    if (existingUserWithEmail) {
+      // 💡 If user already exists, and an image was uploaded, remove the temp file
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.status(400).json({ error: "User with the same email already exists." });
+    }
 
     // 4. Upload profile image (optional)
     let profileImage, public_id;
     if (req.file) {
+      // ✅ Added check for file size
+      if (req.file.size === 0) {
+        fs.unlinkSync(req.file.path); // Remove the empty temp file
+        return res.status(400).json({ message: 'Uploaded image file cannot be empty.' });
+      }
       const uploadResult = await uploadImage(req.file.path);
       profileImage = uploadResult.url;
       public_id = uploadResult.public_id;
@@ -100,11 +87,18 @@ export const CreateSignupController = async (req, res) => {
       newUser,
       token
     });
-    
 
   } catch (err) {
     console.error('Signup error:', err);
+    // 💡 Refined error message for specific upload issues
+    if (err.message === 'Uploaded file is empty or invalid.') {
+      return res.status(400).json({ message: err.message });
+    }
     res.status(500).json({ message: 'Server error' });
+    // 💡 Ensure temp file is cleaned up even on generic server error
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
   }
 };
 
@@ -117,20 +111,20 @@ export const login = async (req, res) => {
   if (!user) {
     return res.status(400).json({ message: 'Not Get User In DataBase' });
   }
-   // Compare Secured (hashed) Password with provided password
-   const passwordMatch = await bcrypt.compare(password, user.password);
+    // Compare Secured (hashed) Password with provided password
+    const passwordMatch = await bcrypt.compare(password, user.password);
 
-   // check is the provided password match with user password
-   if (!passwordMatch) {
-     return res.status(404).json({ error: "Invalid password" });
-   }
-   
-   //  JWT
-   const token = jwt.sign(
-     { email: user.email, id: user._id, role: user.role },
-     process.env.JWT_SECRET,
-     { expiresIn: process.env.JWT_EXPIRES_IN  }
-   );
+    // check is the provided password match with user password
+    if (!passwordMatch) {
+      return res.status(404).json({ error: "Invalid password" });
+    }
+    
+    //  JWT
+    const token = jwt.sign(
+      { email: user.email, id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
 
   res.json({user, token });
 };
@@ -200,7 +194,7 @@ export const deleteUser = async (req, res) =>{
         if (!user) {
             return res.status(404).json({ message: "User not found." });
         }
-         // 🔥 Delete image from Cloudinary if public_id exists
+          // 🔥 Delete image from Cloudinary if public_id exists
     if (user.public_id) {
       await cloudinary.uploader.destroy(user.public_id);
     }
