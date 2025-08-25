@@ -1,4 +1,7 @@
-import { Server as SocketServer } from "socket.io";
+// import { Server as SocketServer } from "socket.io";
+import pkg from "socket.io";
+const { Server: SocketServer } = pkg;
+
 import { ChatMessage } from "../Model/ChatMessage.js";
 import { RideModel } from "../Model/CustomerModel/Ride.js";
 import { startPendingRideNotifier } from "./startPendingRideNotifier.js";
