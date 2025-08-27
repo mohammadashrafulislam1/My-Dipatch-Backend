@@ -13,6 +13,7 @@ export const getSupportCenter = async (req, res) => {
         userType: req.user.type
       });
     } catch (err) {
+      console.log(err)
       res.status(500).send('Server Error');
     }
   };
@@ -28,6 +29,7 @@ export const getSupportCenter = async (req, res) => {
       await newTicket.save();
       res.redirect('/support');
     } catch (err) {
+      console.log(err)
       res.status(500).send('Server Error');
     }
   };

@@ -103,30 +103,67 @@ export const CreateSignupController = async (req, res) => {
 };
 
 // Log in
+// export const login = async (req, res) => {
+//   const { email, password } = req.body;
+//   console.log(req.body)
+//   const user = await UserModel.findOne({ email });
+
+//   if (!user) {
+//     return res.status(400).json({ message: 'Not Get User In DataBase' });
+//   }
+//     // Compare Secured (hashed) Password with provided password
+//     const passwordMatch = await bcrypt.compare(password, user.password);
+
+//     // check is the provided password match with user password
+//     if (!passwordMatch) {
+//       return res.status(404).json({ error: "Invalid password" });
+//     }
+    
+//     //  JWT
+//     const token = jwt.sign(
+//       { email: user.email, id: user._id, role: user.role },
+//       process.env.JWT_SECRET,
+//       { expiresIn: process.env.JWT_EXPIRES_IN }
+//     );
+
+//   res.json({user, token });
+// };
 export const login = async (req, res) => {
   const { email, password } = req.body;
-  console.log(req.body)
   const user = await UserModel.findOne({ email });
 
   if (!user) {
-    return res.status(400).json({ message: 'Not Get User In DataBase' });
+    return res.status(400).json({ message: "User not found" });
   }
-    // Compare Secured (hashed) Password with provided password
-    const passwordMatch = await bcrypt.compare(password, user.password);
 
-    // check is the provided password match with user password
-    if (!passwordMatch) {
-      return res.status(404).json({ error: "Invalid password" });
-    }
-    
-    //  JWT
-    const token = jwt.sign(
-      { email: user.email, id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
-    );
+  const passwordMatch = await bcrypt.compare(password, user.password);
+  if (!passwordMatch) {
+    return res.status(401).json({ message: "Invalid password" });
+  }
 
-  res.json({user, token });
+  const token = jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN }
+  );
+
+  // ✅ Send as HttpOnly cookie instead of JSON
+  res.cookie("token", token, {
+    httpOnly: true, // JS cannot read it (prevents XSS)
+    secure: process.env.NODE_ENV === "production", // HTTPS only in production
+    sameSite: "Strict", // prevents CSRF
+    maxAge: 1000 * 60 * 60, // 1 hour
+  });
+
+  res.json({
+    success: true,
+    message: "Logged in successfully",
+    user: {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+    },
+  });
 };
 // Get current user:
 export const getCurrentUser = async (req, res, next) => {
@@ -184,6 +221,14 @@ export const updateUserStatus = async (req, res) => {
   }
 };
 
+export const logout = (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Strict",
+  });
+  res.json({ success: true, message: "Logged out" });
+};
 
 
 // Delete user with id:
