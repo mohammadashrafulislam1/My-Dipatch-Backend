@@ -149,11 +149,12 @@ export const login = async (req, res) => {
 
   // ✅ Send as HttpOnly cookie instead of JSON
   res.cookie("token", token, {
-    httpOnly: true, // JS cannot read it (prevents XSS)
-    secure: process.env.NODE_ENV === "production", // HTTPS only in production
-    sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
+    httpOnly: true, // cannot be accessed by JS
+    secure: process.env.NODE_ENV === "production", // only over HTTPS in prod
+    sameSite: "None", // if your frontend is on a different domain
     maxAge: 1000 * 60 * 60, // 1 hour
   });
+  
 
   res.json({
     success: true,
