@@ -28,6 +28,7 @@ const allowedOrigins = [
   "https://my-dipatch.vercel.app",
 ];
 
+
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
