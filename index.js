@@ -16,6 +16,7 @@ import { walletRouterr } from "./Router/AdminRouter/walletRoutes.js";
 import { policyRouter } from "./Router/policyRoutes.js";
 import { faqRouter } from "./Router/faqRoutes.js";
 import { supportRouter } from "./Router/supportRoutes.js";
+import cookieParser from "cookie-parser";
 
 configDotenv();
 
@@ -29,6 +30,7 @@ const allowedOrigins = [
 ];
 
 
+app.use(cookieParser()); // BEFORE routes
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -43,6 +45,7 @@ app.use((req, res, next) => {
   req.io = io;
   next();
 });
+
 
 // Routes
 app.use('/api/user', userRouter);
