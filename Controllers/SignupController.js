@@ -129,42 +129,48 @@ export const CreateSignupController = async (req, res) => {
 //   res.json({user, token });
 // };
 export const login = async (req, res) => {
-  const { email, password } = req.body;
-  const user = await UserModel.findOne({ email });
+  try {
+    const { email, password, role } = req.body;
 
-  if (!user) {
-    return res.status(400).json({ message: "User not found" });
+    // Find user with matching email AND role
+    const user = await UserModel.findOne({ email, role });
+    if (!user) {
+      return res.status(400).json({ message: `No ${role} found with this email` });
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ message: "Invalid password" });
+    }
+
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+
+    // Send token as HttpOnly cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "None",
+      maxAge: 1000 * 60 * 60, // 1 hour
+    });
+
+    res.json({
+      success: true,
+      message: `${role} logged in successfully`,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        status: user.status, // driver status if applicable
+      },
+    });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Server error" });
   }
-
-  const passwordMatch = await bcrypt.compare(password, user.password);
-  if (!passwordMatch) {
-    return res.status(401).json({ message: "Invalid password" });
-  }
-
-  const token = jwt.sign(
-    { id: user._id, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN }
-  );
-
-  // ✅ Send as HttpOnly cookie instead of JSON
-  res.cookie("token", token, {
-    httpOnly: true, // cannot be accessed by JS
-    secure: process.env.NODE_ENV === "production", // only over HTTPS in prod
-    sameSite: "None", // if your frontend is on a different domain
-    maxAge: 1000 * 60 * 60, // 1 hour
-  });
-  
-
-  res.json({
-    success: true,
-    message: "Logged in successfully",
-    user: {
-      id: user._id,
-      email: user.email,
-      role: user.role,
-    },
-  });
 };
 // Get current user:
 export const getCurrentUser = async (req, res, next) => {
