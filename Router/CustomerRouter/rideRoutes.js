@@ -5,7 +5,7 @@ import { getDriverEarnings } from "../../Controllers/RiderController/DriverContr
 export const rideRouter = express.Router();
 
 rideRouter.post("/request", requestRide);
-rideRouter.post("/:rideId", getRideById);
+rideRouter.get("/:rideId", getRideById);
 rideRouter.get("/customer/:customerId/history", getRideHistory);
 
 rideRouter.put("/status/:rideId", updateRideStatus);
