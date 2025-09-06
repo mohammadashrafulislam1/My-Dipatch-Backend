@@ -6,8 +6,6 @@ import { WalletTransaction } from "../../Model/CustomerModel/WalletTransaction.j
 import { UserModel } from "../../Model/User.js";
 import { createTransaction } from "../AdminController/WalletController.js";
 
-
-// Create a new ride request
 // Create a new ride request
 export const requestRide = async (req, res) => {
   try {
@@ -17,21 +15,18 @@ export const requestRide = async (req, res) => {
       dropoff,
       midwayStops,
       instructions,
-      price,
     } = req.body;
 
     console.log("📦 Ride request body:", req.body);
 
-    // Validation (basic)
     if (!customerId || !pickup || !dropoff) {
       return res.status(400).json({ message: "Missing required fields." });
     }
 
-    // Prepare waypoints (midway stops)
     const waypoints =
       midwayStops?.map((stop) => `${stop.lat},${stop.lng}`).join("|") || "";
 
-    // Google Directions API call
+    // Call Google Directions API (still using legacy endpoint here)
     const googleRes = await axios.get(
       "https://maps.googleapis.com/maps/api/directions/json",
       {
@@ -44,7 +39,6 @@ export const requestRide = async (req, res) => {
       }
     );
 
-    // Validate Google API response
     if (
       !googleRes.data ||
       googleRes.data.status !== "OK" ||
@@ -57,39 +51,44 @@ export const requestRide = async (req, res) => {
       });
     }
 
-    // Extract route details
     const route = googleRes.data.routes[0];
     let totalDistance = 0;
     let totalDuration = 0;
 
     route.legs.forEach((leg) => {
-      totalDistance += leg.distance.value; // in meters
-      totalDuration += leg.duration.value; // in seconds
+      totalDistance += leg.distance.value; // meters
+      totalDuration += leg.duration.value; // seconds
     });
 
-    const distanceMi = (totalDistance / 1609.34).toFixed(1); // miles
-    const etaMin = Math.round(totalDuration / 60); // minutes
+    const distanceKm = (totalDistance / 1000).toFixed(2);
+    const etaMin = Math.round(totalDuration / 60);
 
-    // Create and save ride
+    // 👉 Fetch pricing settings from DB
+    const settings = await PricingModel.getSettings();
+    const basePrice = settings.pricePerKm * parseFloat(distanceKm);
+
+    // Apply commission
+    const finalPrice =
+      basePrice + (basePrice * settings.adminCommission) / 100;
+
+    // Create ride with calculated price
     const newRide = new RideModel({
       customerId,
       pickup,
       dropoff,
       midwayStops,
       instructions,
-      price,
+      price: finalPrice.toFixed(2), // 💰 calculated, not from frontend
       status: "pending",
       eta: `${etaMin} min`,
-      distance: `${distanceMi} mi`,
+      distance: `${distanceKm} km`,
     });
 
     await newRide.save();
 
-    // Notify only active drivers who are online
+    // Notify drivers (same logic as before)
     if (req.io) {
       console.log("🔔 Emitting new-ride-request to active connected drivers...");
-
-      // Query only active drivers from DB
       const activeDrivers = await UserModel.find({
         role: "driver",
         status: "active",
@@ -100,15 +99,10 @@ export const requestRide = async (req, res) => {
         if (onlineUsers[userId]) {
           req.io.to(userId).emit("new-ride-request", newRide);
           console.log(`📢 Emitted new-ride-request to driver ${userId}`);
-        } else {
-          console.log(`⚠️ Driver ${userId} not connected, skipping emit`);
         }
       });
-    } else {
-      console.log("❌ Socket.io instance not found on req.io");
     }
 
-    // Send success response
     res.status(201).json({
       message: "Ride request created successfully.",
       ride: newRide,
