@@ -5,6 +5,7 @@ import { WalletModel } from "../../Model/CustomerModel/Wallet.js";
 import { WalletTransaction } from "../../Model/CustomerModel/WalletTransaction.js";
 import { UserModel } from "../../Model/User.js";
 import { createTransaction } from "../AdminController/WalletController.js";
+import { PricingModel } from "../../Model/AdminModel/Pricing.js";
 
 // Create a new ride request
 export const requestRide = async (req, res) => {
