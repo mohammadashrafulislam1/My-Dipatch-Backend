@@ -8,6 +8,7 @@ import { createTransaction } from "../AdminController/WalletController.js";
 
 
 // Create a new ride request
+// Create a new ride request
 export const requestRide = async (req, res) => {
   try {
     const {
@@ -18,26 +19,45 @@ export const requestRide = async (req, res) => {
       instructions,
       price,
     } = req.body;
-     console.log( req.body)
+
+    console.log("📦 Ride request body:", req.body);
+
     // Validation (basic)
-    if (!customerId || !pickup ) {
+    if (!customerId || !pickup || !dropoff) {
       return res.status(400).json({ message: "Missing required fields." });
     }
 
     // Prepare waypoints (midway stops)
-    const waypoints = midwayStops?.map(stop => `${stop.lat},${stop.lng}`).join("|") || "";
+    const waypoints =
+      midwayStops?.map((stop) => `${stop.lat},${stop.lng}`).join("|") || "";
 
-    // Google Directions API
-    const googleRes = await axios.get(`https://maps.googleapis.com/maps/api/directions/json`, {
-      params: {
-        origin: `${pickup.lat},${pickup.lng}`,
-        destination: `${dropoff.lat},${dropoff.lng}`,
-        waypoints,
-        key: process.env.GOOGLE_MAPS_API_KEY,
-      },
-    });
-    
+    // Google Directions API call
+    const googleRes = await axios.get(
+      "https://maps.googleapis.com/maps/api/directions/json",
+      {
+        params: {
+          origin: `${pickup.lat},${pickup.lng}`,
+          destination: `${dropoff.lat},${dropoff.lng}`,
+          waypoints,
+          key: process.env.GOOGLE_MAPS_API_KEY,
+        },
+      }
+    );
 
+    // Validate Google API response
+    if (
+      !googleRes.data ||
+      googleRes.data.status !== "OK" ||
+      !googleRes.data.routes.length
+    ) {
+      console.error("❌ Google Directions API error:", googleRes.data);
+      return res.status(400).json({
+        message: "Unable to get route from Google Maps API",
+        details: googleRes.data?.status || "NO_RESPONSE",
+      });
+    }
+
+    // Extract route details
     const route = googleRes.data.routes[0];
     let totalDistance = 0;
     let totalDuration = 0;
@@ -50,7 +70,8 @@ export const requestRide = async (req, res) => {
     const distanceMi = (totalDistance / 1609.34).toFixed(1); // miles
     const etaMin = Math.round(totalDuration / 60); // minutes
 
-    const ride = new RideModel({
+    // Create and save ride
+    const newRide = new RideModel({
       customerId,
       pickup,
       dropoff,
@@ -62,42 +83,42 @@ export const requestRide = async (req, res) => {
       distance: `${distanceMi} mi`,
     });
 
-
     await newRide.save();
 
-   // Notify only active drivers who are online
-   if (req.io) {
-    console.log("🔔 Emitting new-ride-request to active connected drivers...");
+    // Notify only active drivers who are online
+    if (req.io) {
+      console.log("🔔 Emitting new-ride-request to active connected drivers...");
 
-    // Query only active drivers from DB
-    const activeDrivers = await UserModel.find({ role: "driver", status: "active" });
+      // Query only active drivers from DB
+      const activeDrivers = await UserModel.find({
+        role: "driver",
+        status: "active",
+      });
 
-    activeDrivers.forEach(driver => {
-      const userId = driver._id.toString();
-      console.log(onlineUsers)
-      if (onlineUsers[userId]) {
-        req.io.to(userId).emit("new-ride-request", newRide);
-        console.log(`📢 Emitted new-ride-request to driver ${userId}`);
-      } else {
-        console.log(`⚠️ Driver ${userId} not connected, skipping emit`);
-      }
-    });
-  } else {
-    console.log("❌ Socket.io instance not found on req.io");
-  }
+      activeDrivers.forEach((driver) => {
+        const userId = driver._id.toString();
+        if (onlineUsers[userId]) {
+          req.io.to(userId).emit("new-ride-request", newRide);
+          console.log(`📢 Emitted new-ride-request to driver ${userId}`);
+        } else {
+          console.log(`⚠️ Driver ${userId} not connected, skipping emit`);
+        }
+      });
+    } else {
+      console.log("❌ Socket.io instance not found on req.io");
+    }
 
-    
-
-
+    // Send success response
     res.status(201).json({
       message: "Ride request created successfully.",
-      ride: newRide
+      ride: newRide,
     });
   } catch (err) {
     console.error("Ride request error:", err);
     res.status(500).json({ message: "Server error creating ride request." });
   }
 };
+
 
 
 // Update ride status (for admin or driver)
