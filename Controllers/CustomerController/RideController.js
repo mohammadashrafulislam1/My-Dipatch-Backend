@@ -23,14 +23,44 @@ export const requestRide = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields." });
     }
 
-    const newRide = new RideModel({
+    // Prepare waypoints (midway stops)
+    const waypoints = midwayStops?.map(stop => `${stop.lat},${stop.lng}`).join("|") || "";
+
+    // Google Directions API
+    const googleRes = await axios.get(`https://maps.googleapis.com/maps/api/directions/json`, {
+      params: {
+        origin: `${pickup.lat},${pickup.lng}`,
+        destination: `${dropoff.lat},${dropoff.lng}`,
+        waypoints,
+        key: process.env.GOOGLE_MAPS_API_KEY,
+      },
+    });
+    
+
+    const route = googleRes.data.routes[0];
+    let totalDistance = 0;
+    let totalDuration = 0;
+
+    route.legs.forEach((leg) => {
+      totalDistance += leg.distance.value; // in meters
+      totalDuration += leg.duration.value; // in seconds
+    });
+
+    const distanceMi = (totalDistance / 1609.34).toFixed(1); // miles
+    const etaMin = Math.round(totalDuration / 60); // minutes
+
+    const ride = new RideModel({
       customerId,
       pickup,
       dropoff,
       midwayStops,
       instructions,
       price,
+      status: "pending",
+      eta: `${etaMin} min`,
+      distance: `${distanceMi} mi`,
     });
+
 
     await newRide.save();
 

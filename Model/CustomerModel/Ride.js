@@ -48,6 +48,8 @@ const rideSchema = new mongoose.Schema({
     enum: ["pending", "accepted", "on_the_way", "in_progress", "completed", "cancelled"],
     default: "pending"
   },
+  eta: { type: String },       // e.g., "15 min"
+distance: { type: String },
   createdAt: {
     type: Date,
     default: Date.now
