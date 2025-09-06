@@ -28,7 +28,7 @@ export const CreateSignupController = async (req, res) => {
     const { firstName, lastName, email, phone, city, password, role } = req.body;
 
     // 1. Validate input
-    if (!firstName || !lastName || !email || !phone || !city || !password || !role) {
+    if (!firstName || !email || !phone || !city || !password || !role) {
       return res.status(400).json({ message: 'All fields are required.' });
     }
     const emailToCheck = email.toLowerCase();
@@ -49,7 +49,8 @@ export const CreateSignupController = async (req, res) => {
       // ✅ Added check for file size
       if (req.file.size === 0) {
         fs.unlinkSync(req.file.path); // Remove the empty temp file
-        return res.status(400).json({ message: 'Uploaded image file cannot be empty.' });
+        // return res.status(400).json({ message: 'Uploaded image file cannot be empty.' });
+        return
       }
       const uploadResult = await uploadImage(req.file.path);
       profileImage = uploadResult.url;
