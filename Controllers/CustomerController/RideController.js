@@ -142,6 +142,32 @@ export const getRideHistory = async (req, res) => {
       res.status(500).json({ message: "Server error retrieving ride history." });
     }
   };
+ // Get a ride by ID
+export const getRideById = async (req, res) => {
+  try {
+    const { rideId } = req.params;
+
+    if (!rideId) {
+      return res.status(400).json({ message: "Missing rideId parameter." });
+    }
+
+    const ride = await RideModel.findById(rideId);
+
+    if (!ride) {
+      return res.status(404).json({ message: "Ride not found." });
+    }
+
+    res.status(200).json({
+      message: "Ride retrieved successfully.",
+      ride,
+    });
+  } catch (err) {
+    console.error("Get ride by ID error:", err);
+    res.status(500).json({ message: "Server error retrieving ride." });
+  }
+};
+
+
 
 // Get ride history for a specific Driver
 export const getDriverRideHistory = async (req, res) => {
