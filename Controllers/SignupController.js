@@ -198,7 +198,7 @@ export const getUsers = async (req, res) =>{
   }
 }
 
-// Change user status (admin only)
+// Change user status (for drivers only)
 export const updateUserStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;

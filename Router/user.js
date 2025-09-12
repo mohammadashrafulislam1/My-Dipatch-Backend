@@ -14,4 +14,4 @@ userRouter.get('/me', verifyToken, getCurrentUser);
 userRouter.get('/', getUsers)
 userRouter.delete('/:id',  deleteUser)
 // PUT /api/users/:id/status
-// userRouter.put('/:id/status', isAuthenticated, isAdmin, updateUserStatus);
+userRouter.put('/:id/status', updateUserStatus);
