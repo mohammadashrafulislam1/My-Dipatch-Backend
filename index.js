@@ -27,6 +27,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
   "https://my-dipatch.vercel.app",
+  "https://my-dipatch-driver.vercel.app"
 ];
 
 
