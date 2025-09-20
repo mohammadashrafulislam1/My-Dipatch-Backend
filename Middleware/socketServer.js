@@ -102,12 +102,16 @@ export const initSocket = (server) => {
       io.to("driver").emit("admin-message", { message });
     });
 
-    // Notify all admins of new ride requests (optional)
-    socket.on("new-ride", (rideData) => {
- console.log("rideData:", rideData)
-      io.to("admin").emit("new-ride-request", rideData);
-      io.to("driver").emit("new-ride-request", rideData);  // notify all drivers)
-    });
+   // Notify all admins and drivers of new ride requests only if status is "pending"
+socket.on("new-ride", (rideData) => {
+  console.log("rideData:", rideData);
+
+  if (rideData.status === "pending") {
+    io.to("admin").emit("new-ride-request", rideData);
+    io.to("driver").emit("new-ride-request", rideData); // notify all drivers
+  }
+});
+
 
     // Handle disconnect
     socket.on("disconnect", () => {
