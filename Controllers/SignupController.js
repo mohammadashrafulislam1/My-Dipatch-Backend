@@ -147,7 +147,6 @@ export const login = async (req, res) => {
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
     );
 
     // Send token as HttpOnly cookie
@@ -155,7 +154,6 @@ export const login = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "None",
-      maxAge: 1000 * 60 * 60, // 1 hour
     });
 
     res.json({
