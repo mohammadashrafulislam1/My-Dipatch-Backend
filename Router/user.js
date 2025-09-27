@@ -13,7 +13,7 @@ userRouter.post('/logout', logout)
 // Get current user route (protected)
 userRouter.get('/me', verifyToken, getCurrentUser);
 userRouter.get('/', getUsers)
-userRouter.delete('/:id',  getUserById)
+userRouter.get('/:id',  getUserById)
 userRouter.delete('/:id',  deleteUser)
 // PUT /api/users/:id/status
 userRouter.put('/:id/status', updateUserStatus);
