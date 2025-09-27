@@ -196,6 +196,21 @@ export const getUsers = async (req, res) =>{
   }
 }
 
+// Get a user by ID
+export const getUserById = async (req, res) => {
+  const { id } = req.params; // Get ID from request parameters
+  try {
+    const user = await UserModel.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+    res.status(200).json(user);
+  } catch (e) {
+    res.status(500).json({ message: "Internal Server Error." });
+  }
+};
+
+
 // Change user status (for drivers only)
 export const updateUserStatus = async (req, res) => {
   const { id } = req.params;
