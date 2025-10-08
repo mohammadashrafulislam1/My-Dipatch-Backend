@@ -80,7 +80,7 @@ export const sendChatMessage = async (req, res) => {
     res.status(200).json({ message: "Message sent", chat: newMsg });
   } catch (err) {
     console.error("Send message error:", err);
-    res.status(500).json({ message: "Failed to send message" });
+    res.status(500).json({ message: "Failed to send message", err });
   }
 };
 
