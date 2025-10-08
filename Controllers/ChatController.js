@@ -57,7 +57,7 @@ export const sendChatMessage = async (req, res) => {
     if (disallowedStatuses.includes(ride.status)) {
       return res.status(400).json({ message: `Chat is disabled for ride status: ${ride.status}` });
     }
-    
+    console.log(ride)
     // 4. Validate presence of participants (Critical Fix)
     // A ride without both a customer and a driver shouldn't allow chat
     if (!ride.customerId || !ride.driverId) {
