@@ -34,7 +34,7 @@ export const deleteRideChat = async (rideId) => {
 export const sendChatMessage = async (req, res) => {
   try {
     const { rideId, senderId, senderRole, recipientId, text } = req.body;
-
+    console.log(req.body)
     // 1. Validate required fields
     if (!rideId || !senderId || !senderRole || !recipientId) {
       return res.status(400).json({ message: "Missing required fields" });
