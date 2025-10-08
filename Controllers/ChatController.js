@@ -35,23 +35,36 @@ export const sendChatMessage = async (req, res) => {
   try {
     const { rideId, senderId, senderRole, recipientId, text } = req.body;
 
-    // Validate required fields
+    // 1. Validate required fields
     if (!rideId || !senderId || !senderRole || !recipientId) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Validate roles
+    // 2. Validate roles
     if (!["driver", "customer"].includes(senderRole)) {
       return res.status(400).json({ message: "Invalid sender role" });
     }
 
-    // Validate ride status
+    // 3. Validate ride existence and status
     const ride = await RideModel.findById(rideId);
-    if (!ride || ride.status === "completed") {
-      return res.status(400).json({ message: "Ride not active or completed" });
+    if (!ride) {
+      return res.status(404).json({ message: "Ride not found" });
+    }
+    
+    // Check if the ride has passed the point where chatting is sensible
+    // You should allow 'accepted', 'on_the_way', 'in_progress' for chat
+    const disallowedStatuses = ["pending", "completed", "cancelled", "failed"];
+    if (disallowedStatuses.includes(ride.status)) {
+      return res.status(400).json({ message: `Chat is disabled for ride status: ${ride.status}` });
+    }
+    
+    // 4. Validate presence of participants (Critical Fix)
+    // A ride without both a customer and a driver shouldn't allow chat
+    if (!ride.customerId || !ride.driverId) {
+        return res.status(400).json({ message: "Chat cannot start: Ride is missing a customer or driver ID." });
     }
 
-    // Validate participants
+    // 5. Validate that sender is a participant (The part that caused the error)
     const isValidParticipant = 
       (senderRole === "driver" && ride.driverId.toString() === senderId) ||
       (senderRole === "customer" && ride.customerId.toString() === senderId);
@@ -59,28 +72,38 @@ export const sendChatMessage = async (req, res) => {
     if (!isValidParticipant) {
       return res.status(403).json({ message: "Not a ride participant" });
     }
+    
+    // You might also want to validate recipientId matches the *other* participant.
+    let expectedRecipientId = senderRole === "driver" ? ride.customerId.toString() : ride.driverId.toString();
+    if (recipientId !== expectedRecipientId) {
+        return res.status(400).json({ message: "Invalid recipient for this ride." });
+    }
 
+
+    // 6. Create and save the message
     const newMsg = new ChatMessage({
       rideId,
       senderId,
       senderRole,
       recipientId,
-      text,
+      message: text, // Assuming your ChatMessage model uses 'message' for text
+      // Add other fields like fileUrl, fileType if needed, but for text only, this is fine
     });
 
     await newMsg.save();
 
-    // Emit via Socket.IO
+    // 7. Emit via Socket.IO
     if (req.io) {
+      // Emit to the recipient
       req.io.to(recipientId).emit("chat-message", newMsg);
-      // Also emit to sender for sync across devices
+      // Also emit to the sender (for sync across their own devices)
       req.io.to(senderId).emit("chat-message", newMsg);
     }
 
     res.status(200).json({ message: "Message sent", chat: newMsg });
   } catch (err) {
     console.error("Send message error:", err);
-    res.status(500).json({ message: "Failed to send message", err });
+    res.status(500).json({ message: "Failed to send message", err: err.message });
   }
 };
 
