@@ -63,7 +63,7 @@ export const sendChatMessage = async (req, res) => {
     if (!ride.customerId || !ride.driverId) {
         return res.status(400).json({ message: "Chat cannot start: Ride is missing a customer or driver ID." });
     }
-
+    console.log(senderId, ride.driverId.toString(), ride.customerId.toString())
     // 5. Validate that sender is a participant (The part that caused the error)
     const isValidParticipant = 
       (senderRole === "driver" && ride.driverId.toString() === senderId) ||
