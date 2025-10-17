@@ -129,61 +129,70 @@ export const CreateSignupController = async (req, res) => {
 
 //   res.json({user, token });
 // };
+
 export const login = async (req, res) => {
   try {
     const { email, password, role } = req.body;
 
-    // Find user with matching email AND role
+    // 1️⃣ Find user with matching email AND role
     const user = await UserModel.findOne({ email, role });
     if (!user) {
       return res.status(400).json({ message: `No ${role} found with this email` });
     }
 
-    // Compare passwords
+    // 2️⃣ Check password
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       return res.status(401).json({ message: "Invalid password" });
     }
 
-    // Generate JWT token
+    // 3️⃣ Generate token
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" } // optional: expires in 7 days
+      { expiresIn: "7d" }
     );
 
-    // Assign a role-specific cookie name
-    let cookieName;
-    if (role === "admin") cookieName = "adminToken";
-    else if (role === "driver") cookieName = "driverToken";
-    else cookieName = "customerToken";
+    // 4️⃣ Choose cookie name based on role
+    const cookieName =
+      role === "admin"
+        ? "adminToken"
+        : role === "driver"
+        ? "driverToken"
+        : "customerToken";
 
-    // Send token as HttpOnly cookie
+    // 5️⃣ Clear all possible previous tokens to avoid conflicts
+    res.clearCookie("token");
+    res.clearCookie("adminToken");
+    res.clearCookie("driverToken");
+    res.clearCookie("customerToken");
+
+    // 6️⃣ Set the role-based cookie
     res.cookie(cookieName, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // true for HTTPS
+      secure: process.env.NODE_ENV === "production",
       sameSite: "None",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    // Send response
-    res.json({
+    // 7️⃣ Send response
+    res.status(200).json({
       success: true,
       message: `${role} logged in successfully`,
+      cookieName,
       user: {
         id: user._id,
         email: user.email,
         role: user.role,
-        status: user.status, // e.g. driver active/inactive
+        status: user.status,
       },
-      tokenName: cookieName, // helpful for frontend
     });
-
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // Get current user:
 export const getCurrentUser = async (req, res, next) => {
