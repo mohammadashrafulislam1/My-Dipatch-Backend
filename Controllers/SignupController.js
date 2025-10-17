@@ -139,23 +139,34 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: `No ${role} found with this email` });
     }
 
+    // Compare passwords
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       return res.status(401).json({ message: "Invalid password" });
     }
 
+    // Generate JWT token
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
+      { expiresIn: "7d" } // optional: expires in 7 days
     );
 
+    // Assign a role-specific cookie name
+    let cookieName;
+    if (role === "admin") cookieName = "adminToken";
+    else if (role === "driver") cookieName = "driverToken";
+    else cookieName = "customerToken";
+
     // Send token as HttpOnly cookie
-    res.cookie("token", token, {
+    res.cookie(cookieName, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.NODE_ENV === "production", // true for HTTPS
       sameSite: "None",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
+    // Send response
     res.json({
       success: true,
       message: `${role} logged in successfully`,
@@ -163,14 +174,17 @@ export const login = async (req, res) => {
         id: user._id,
         email: user.email,
         role: user.role,
-        status: user.status, // driver status if applicable
+        status: user.status, // e.g. driver active/inactive
       },
+      tokenName: cookieName, // helpful for frontend
     });
+
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 // Get current user:
 export const getCurrentUser = async (req, res, next) => {
   try {
