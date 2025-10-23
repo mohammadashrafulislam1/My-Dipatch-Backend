@@ -246,7 +246,12 @@ export const getChatHistoryByRide = async (req, res) => {
   try {
     const ride = await RideModel.findById(rideId);
     if (!ride) return res.status(404).json({ message: "Ride not found" });
-
+    console.log("UserId from token:", userId);
+    console.log("Ride IDs:", {
+      driverId: ride.driverId.toString(),
+      customerId: ride.customerId.toString(),
+    });
+    
     // Check if user is driver or customer of this ride
     const isParticipant =
       ride.driverId.toString() === userId ||
