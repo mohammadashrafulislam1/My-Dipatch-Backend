@@ -154,23 +154,28 @@ export const login = async (req, res) => {
     );
 
     // 4️⃣ Choose cookie name based on role
-    const cookieName =
-      role === "admin"
-        ? "adminToken"
-        : role === "driver"
-        ? "driverToken"
-        : "customerToken";
+const cookieName =
+newUser.role === "admin"
+  ? "adminToken"
+  : newUser.role === "driver"
+  ? "driverToken"
+  : "customerToken";
+
 
     // 5️⃣ Clear all possible previous tokens to avoid conflicts
-    res.clearCookie("token");
+res.clearCookie("token");
+res.clearCookie("customerToken");
+res.clearCookie("driverToken");
+res.clearCookie("adminToken");
+
 
     // 6️⃣ Set the role-based cookie
-    res.cookie(cookieName, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "None",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+res.cookie(cookieName, token, {
+httpOnly: true,
+secure: process.env.NODE_ENV === "production",
+sameSite: "None",
+maxAge: 7 * 24 * 60 * 60 * 1000,
+
 
     // 7️⃣ Send response
     res.status(200).json({
@@ -263,13 +268,21 @@ export const updateUserStatus = async (req, res) => {
 };
 
 export const logout = (req, res) => {
-  res.clearCookie("token", {
+  const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "None",
-  });
-  res.json({ success: true, message: "Logged out" });
+  };
+
+  // Clear all possible auth cookies
+  res.clearCookie("token", cookieOptions);
+  res.clearCookie("customerToken", cookieOptions);
+  res.clearCookie("driverToken", cookieOptions);
+  res.clearCookie("adminToken", cookieOptions);
+
+  res.json({ success: true, message: "Logged out successfully" });
 };
+
 
 
 // Delete user with id:
