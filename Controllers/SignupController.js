@@ -163,9 +163,6 @@ export const login = async (req, res) => {
 
     // 5️⃣ Clear all possible previous tokens to avoid conflicts
     res.clearCookie("token");
-    res.clearCookie("adminToken");
-    res.clearCookie("driverToken");
-    res.clearCookie("customerToken");
 
     // 6️⃣ Set the role-based cookie
     res.cookie(cookieName, token, {

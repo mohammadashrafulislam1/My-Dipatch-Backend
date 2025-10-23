@@ -2,7 +2,12 @@
 import jwt from "jsonwebtoken";
 
 export const verifyToken = (req, res, next) => {
-  const token = req.cookies.token; // token should come from cookie
+  // Check for the role-based tokens set in the login controller
+  const token = req.cookies.adminToken || req.cookies.driverToken || req.cookies.customerToken; 
+  
+  // 💡 Optional: If you still want to support a generic 'token' cookie, uncomment the next line:
+  // const token = req.cookies.adminToken || req.cookies.driverToken || req.cookies.customerToken || req.cookies.token; 
+
   if (!token) return res.status(401).json({ message: "Unauthorized" });
 
   try {
