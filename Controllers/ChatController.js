@@ -207,7 +207,7 @@ export const sendAdminMessage = async (req, res) => {
       senderRole: "admin",
       recipientId: recipientType === "user" ? recipientId : null,
       recipientType,
-      text
+      message: text, // ✅ must be text from request
     });
 
     await newMsg.save();
@@ -240,17 +240,18 @@ export const sendAdminMessage = async (req, res) => {
 // Get chat history
 export const getChatHistoryByRide = async (req, res) => {
   const { rideId } = req.params;
-  const userId = req.user._id; // Authenticated user
+  const userId = req.user._id; // Authenticated user ID
+  const userRole = req.user.role; // Optional, can check role if needed
 
   try {
     const ride = await RideModel.findById(rideId);
     if (!ride) return res.status(404).json({ message: "Ride not found" });
 
-    // Verify user is ride participant
-    const isParticipant = 
-      ride.driverId.toString() === userId || 
+    // Check if user is driver or customer of this ride
+    const isParticipant =
+      ride.driverId.toString() === userId ||
       ride.customerId.toString() === userId;
-    
+
     if (!isParticipant) {
       return res.status(403).json({ message: "Access to ride chat denied" });
     }
