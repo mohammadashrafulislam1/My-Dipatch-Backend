@@ -1,6 +1,7 @@
 import express from "express";
 import { deleteRideChat, getChatHistoryByRide, sendAdminMessage, sendChatMessage, uploadChatFile } from "../Controllers/ChatController.js";
 import { upload } from "../Middleware/upload.js";
+import { verifyToken } from "../Middleware/jwt.js";
 
 export const chatRouter = express.Router();
 chatRouter.get("/:rideId", verifyToken, getChatHistoryByRide);
