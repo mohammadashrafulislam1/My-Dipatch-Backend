@@ -154,28 +154,27 @@ export const login = async (req, res) => {
     );
 
     // 4️⃣ Choose cookie name based on role
-const cookieName =
-newUser.role === "admin"
-  ? "adminToken"
-  : newUser.role === "driver"
-  ? "driverToken"
-  : "customerToken";
-
+    const cookieName =
+      role === "admin"
+        ? "adminToken"
+        : role === "driver"
+        ? "driverToken"
+        : "customerToken";
 
     // 5️⃣ Clear all possible previous tokens to avoid conflicts
-res.clearCookie("token");
-res.clearCookie("customerToken");
-res.clearCookie("driverToken");
-res.clearCookie("adminToken");
+//     res.clearCookie("token");
+// res.clearCookie("customerToken");
+// res.clearCookie("driverToken");
+// res.clearCookie("adminToken");
 
 
     // 6️⃣ Set the role-based cookie
-res.cookie(cookieName, token, {
-httpOnly: true,
-secure: process.env.NODE_ENV === "production",
-sameSite: "None",
-maxAge: 7 * 24 * 60 * 60 * 1000,
-
+    res.cookie(cookieName, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "None",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
     // 7️⃣ Send response
     res.status(200).json({
@@ -196,20 +195,38 @@ maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
 
-// Get current user:
-export const getCurrentUser = async (req, res, next) => {
+// Get current user
+export const getCurrentUser = async (req, res) => {
   try {
-    const user = await UserModel.findById(req.decoded.id || req.decoded.userId);
-    console.log("user", req.decoded)
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    const { id, role } = req.decoded; // Extract from decoded token
+
+    if (!id || !role) {
+      return res.status(400).json({ message: "Invalid token payload." });
     }
-    res.status(200).json(user);
+
+    // Fetch user based on role (if you have different models, you could branch here)
+    const user = await UserModel.findById(id).select("-password"); // exclude password field
+
+    if (!user) {
+      return res.status(404).json({ message: `${role} not found.` });
+    }
+
+    // Optionally double-check if token role matches DB role
+    if (user.role !== role) {
+      return res.status(403).json({ message: "Role mismatch. Unauthorized." });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `${role} retrieved successfully.`,
+      user,
+    });
   } catch (error) {
-    console.error(error);
+    console.error("getCurrentUser error:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 // Get all users:
 export const getUsers = async (req, res) =>{
   try{
