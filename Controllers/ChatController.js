@@ -240,9 +240,9 @@ export const sendAdminMessage = async (req, res) => {
 // Get chat history
 export const getChatHistoryByRide = async (req, res) => {
   const { rideId } = req.params;
-  const userId = req.decoded._id; // ✅ use decoded from middleware
+  const userId = req.decoded.id; // ✅ use decoded from middleware
   const userRole = req.decoded.role; // optional
-  console.log(req.decoded)
+  console.log(req.decoded.id)
   try {
     const ride = await RideModel.findById(rideId);
     if (!ride) return res.status(404).json({ message: "Ride not found" });
