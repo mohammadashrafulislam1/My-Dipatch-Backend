@@ -11,7 +11,9 @@ userRouter.post('/signup', upload.single('profileImage'), CreateSignupController
 userRouter.post('/login', login)
 userRouter.post('/logout', logout)
 // Get current user route (protected)
-userRouter.get('/me', verifyToken, getCurrentUser);
+userRouter.get('/me/customer', verifyToken('customer'), getCurrentUser);
+userRouter.get('/me/driver', verifyToken('driver'), getCurrentUser);
+
 userRouter.get('/', getUsers)
 userRouter.get('/:id',  getUserById)
 userRouter.delete('/:id',  deleteUser)
