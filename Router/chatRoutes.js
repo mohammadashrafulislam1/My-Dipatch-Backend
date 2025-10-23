@@ -4,8 +4,9 @@ import { upload } from "../Middleware/upload.js";
 import { verifyToken } from "../Middleware/jwt.js";
 
 export const chatRouter = express.Router();
-chatRouter.get("/:rideId", verifyToken(), getChatHistoryByRide);
-chatRouter.post("/upload", upload.single("file"), uploadChatFile);
+chatRouter.get("/customer/:rideId", verifyToken('customer'), getChatHistoryByRide);
+chatRouter.get("/:rideId", verifyToken('driver'), getChatHistoryByRide);
+chatRouter.post("/driver/upload", upload.single("file"), uploadChatFile);
 
 // Send admin message (to all, customers, drivers, or a specific user)
 chatRouter.post("/admin/send", sendAdminMessage);
