@@ -214,6 +214,24 @@ export const getRideById = async (req, res) => {
   }
 };
 
+// Get all rides
+export const getAllRides = async (req, res) => {
+  try {
+    const rides = await RideModel.find().sort({ createdAt: -1 }); // newest first
+
+    if (!rides || rides.length === 0) {
+      return res.status(404).json({ message: "No rides found." });
+    }
+
+    res.status(200).json({
+      message: "Rides retrieved successfully.",
+      rides,
+    });
+  } catch (err) {
+    console.error("Get all rides error:", err);
+    res.status(500).json({ message: "Server error retrieving rides." });
+  }
+};
 
 
 // Get ride history for a specific Driver

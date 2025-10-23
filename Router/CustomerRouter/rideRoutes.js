@@ -1,11 +1,12 @@
 import express from "express";
-import { getDriverRideHistory, getRideById, getRideHistory, requestRide, updateRideStatus } from "../../Controllers/CustomerController/RideController.js";
+import { getAllRides, getDriverRideHistory, getRideById, getRideHistory, requestRide, updateRideStatus } from "../../Controllers/CustomerController/RideController.js";
 import { getDriverEarnings } from "../../Controllers/RiderController/DriverController.js";
 
 export const rideRouter = express.Router();
 
 rideRouter.post("/request", requestRide);
 rideRouter.get("/:rideId", getRideById);
+rideRouter.get("/", getAllRides);
 rideRouter.get("/customer/:customerId/history", getRideHistory);
 
 rideRouter.put("/status/:rideId", updateRideStatus);
