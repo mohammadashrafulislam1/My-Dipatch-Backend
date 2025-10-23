@@ -3,7 +3,7 @@ import { deleteRideChat, getChatHistoryByRide, sendAdminMessage, sendChatMessage
 import { upload } from "../Middleware/upload.js";
 
 export const chatRouter = express.Router();
-chatRouter.get("/:rideId", getChatHistoryByRide);
+chatRouter.get("/:rideId", verifyToken, getChatHistoryByRide);
 chatRouter.post("/upload", upload.single("file"), uploadChatFile);
 
 // Send admin message (to all, customers, drivers, or a specific user)
