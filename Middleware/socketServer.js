@@ -1,3 +1,4 @@
+// socketServer.js - Add these updates
 import { Server as SocketServer } from "socket.io";
 import { ChatMessage } from "../Model/ChatMessage.js";
 import { RideModel } from "../Model/CustomerModel/Ride.js";
@@ -5,9 +6,13 @@ import { startPendingRideNotifier } from "./startPendingRideNotifier.js";
 
 let io;
 
-  // Store all connected users
-  export const onlineUsers = {};
-  console.log(onlineUsers)
+// Store all connected users
+export const onlineUsers = {};
+// Store driver locations and active rides
+export const driverLocations = {};
+export const activeRides = {};
+
+console.log(onlineUsers);
 
 export const initSocket = (server) => {
   io = new SocketServer(server, {
@@ -18,61 +23,22 @@ export const initSocket = (server) => {
     },
   });
   startPendingRideNotifier(io);
-    // 🔐 JWT Middleware for Socket.IO
-    /*io.use((socket, next) => {
-      const token = socket.handshake.auth?.token;
-  
-      if (!token) {
-        return next(new Error("Authentication error: Token missing"));
-      }
-  
-      try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET); 
-        socket.user = decoded; 
-        next();
-      } catch (err) {
-        return next(new Error("Authentication error: Invalid token"));
-      }
-    });*/
-  
 
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
 
-    socket.on("chat-message", async ({ rideId, senderId, senderRole, recipientId, message, fileUrl, fileType }) => {
-      try {
-        const newMsg = new ChatMessage({
-          rideId,
-          senderId,
-          senderRole,
-          recipientId,
-          message: message || "", // optional
-          fileUrl: fileUrl || null, // optional
-          fileType: fileType || null, // "image", "file", etc.
-        });
-    
-        await newMsg.save();
-    
-        io.to(recipientId).emit("chat-message", newMsg);
-    
-        if (senderRole === "admin") {
-          console.log("Admin sent:", message || fileUrl);
-        }
-      } catch (err) {
-        console.error("Socket chat-message error:", err);
-      }
-    });
-    
+    // ... your existing chat message code ...
+
     // Handle join event from customer/driver/admin
     socket.on("join", async ({ userId, role }) => {
       if (!userId || !role) return;
-    
+
       onlineUsers[userId] = { socketId: socket.id, role };
       socket.join(userId);
       socket.join(role);
-    
+
       console.log(`${role} [${userId}] joined socket room(s)`);
-    
+
       if (role === "driver") {
         // Send all pending rides to this driver on connect
         const pendingRides = await RideModel.find({ status: "pending" });
@@ -81,66 +47,120 @@ export const initSocket = (server) => {
         });
       }
     });
-    
 
     // Driver accepts a ride -> notify customer
-    socket.on("accept-ride", ({ rideId, driverId, customerId }) => {
-      if (customerId) {
-        io.to(customerId).emit("ride-accepted", { rideId, driverId });
+    socket.on("accept-ride", async ({ rideId, driverId, customerId }) => {
+      try {
+        // Store active ride information
+        activeRides[driverId] = rideId;
+        
+        if (customerId) {
+          io.to(customerId).emit("ride-accepted", { 
+            rideId, 
+            driverId,
+            message: "Your ride has been accepted! Driver is on the way."
+          });
+          
+          // Also join the ride room for location updates
+          socket.join(rideId);
+          socket.join(`ride-${rideId}`);
+        }
+      } catch (error) {
+        console.error("Error accepting ride:", error);
       }
     });
 
-    // Driver sends live location -> notify customer
-    socket.on("driver-location", ({ rideId, coords, customerId }) => {
-      if (customerId) {
-        io.to(customerId).emit("driver-location", { rideId, coords });
+    // 🔥 NEW: Driver sends live location updates
+    socket.on("driver-location-update", ({ driverId, rideId, location }) => {
+      try {
+        // Store driver location
+        driverLocations[driverId] = {
+          ...location,
+          timestamp: Date.now(),
+          rideId
+        };
+
+        // Notify the specific customer for this ride
+        const ride = activeRides[driverId];
+        if (ride) {
+          // Find customer ID from ride data (you might need to fetch this from DB)
+          RideModel.findById(rideId).then(rideData => {
+            if (rideData && rideData.customerId) {
+              io.to(rideData.customerId).emit("driver-location-update", {
+                driverId,
+                rideId,
+                location: driverLocations[driverId]
+              });
+            }
+          }).catch(err => console.error("Error finding ride:", err));
+        }
+
+        // Also broadcast to all in the ride room
+        io.to(`ride-${rideId}`).emit("driver-location-update", {
+          driverId,
+          rideId,
+          location: driverLocations[driverId]
+        });
+
+        console.log(`Driver ${driverId} location updated:`, location);
+      } catch (error) {
+        console.error("Error updating driver location:", error);
       }
     });
 
-    // Admin broadcasts to all drivers
-    socket.on("admin-broadcast", ({ message }) => {
-      io.to("driver").emit("admin-message", { message });
+    // 🔥 NEW: Customer joins ride room to receive location updates
+    socket.on("join-ride", ({ rideId, customerId }) => {
+      socket.join(`ride-${rideId}`);
+      console.log(`Customer ${customerId} joined ride room: ride-${rideId}`);
+
+      // Send current driver location if available
+      const driverLocation = Object.values(driverLocations).find(
+        loc => loc.rideId === rideId
+      );
+      
+      if (driverLocation) {
+        const driverId = Object.keys(driverLocations).find(
+          id => driverLocations[id].rideId === rideId
+        );
+        
+        socket.emit("driver-location-update", {
+          driverId,
+          rideId,
+          location: driverLocation
+        });
+      }
     });
 
-   // Notify all admins and drivers of new ride requests only if status is "pending"
-socket.on("new-ride", (rideData) => {
-  console.log("rideData:", rideData);
-
-  if (rideData.status === "pending") {
-    io.to("admin").emit("new-ride-request", rideData);
-    io.to("driver").emit("new-ride-request", rideData); // notify all drivers
-  }
-});
-
+    // 🔥 NEW: Driver stops sharing location (when ride ends or goes offline)
+    socket.on("driver-location-stop", ({ driverId }) => {
+      delete driverLocations[driverId];
+      delete activeRides[driverId];
+      
+      // Notify customers that driver stopped sharing location
+      io.emit("driver-location-disconnected", { driverId });
+    });
 
     // Handle disconnect
     socket.on("disconnect", () => {
       for (let userId in onlineUsers) {
         if (onlineUsers[userId].socketId === socket.id) {
-          console.log(`${onlineUsers[userId].role} [${userId}] disconnected`);
+          const role = onlineUsers[userId].role;
+          console.log(`${role} [${userId}] disconnected`);
+          
+          // If driver disconnects, remove their location
+          if (role === "driver") {
+            delete driverLocations[userId];
+            delete activeRides[userId];
+            io.emit("driver-location-disconnected", { driverId: userId });
+          }
+          
           delete onlineUsers[userId];
           break;
         }
       }
     });
   });
-  // io.on("connection", (socket) => {
-  //   console.log("Socket connected:", socket.id);
-  
-  //   // Emit a test notification to your driver ID after 3 seconds
-  //   setTimeout(() => {
-  //     io.to("6897f362d0b0f0a2da455188").emit("new-ride-request", {
-  //       pickup: { address: "123 Test St" },
-  //       dropoff: { address: "456 Demo Ave" },
-  //       price: 15,
-  //       requestId: "test123"
-  //     });
-  //     console.log("Sent test ride request to driver");
-  //   }, 3000);
-  
-  //   // other handlers...
-  // });
-  
+
   return io;
 };
 
