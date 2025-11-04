@@ -36,7 +36,6 @@ app.use(cookieParser()); // BEFORE routes
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.options('*', cors({ origin: allowedOrigins, credentials: true }));
 
 const server = http.createServer(app);
 
