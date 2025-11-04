@@ -184,7 +184,6 @@ export const login = async (req, res) => {
       success: true,
       message: `${role} logged in successfully`,
       token,
-      cookieName,
       user: {
         id: user._id,
         email: user.email,
