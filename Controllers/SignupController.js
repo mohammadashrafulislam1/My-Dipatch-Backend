@@ -183,6 +183,7 @@ export const login = async (req, res) => {
     res.status(200).json({
       success: true,
       message: `${role} logged in successfully`,
+      token,
       cookieName,
       user: {
         id: user._id,
