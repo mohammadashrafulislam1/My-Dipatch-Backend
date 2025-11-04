@@ -153,43 +153,45 @@ export const login = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    // 4️⃣ Choose cookie name based on role
-    const cookieName =
-      role === "admin"
-        ? "adminToken"
-        : role === "driver"
-        ? "driverToken"
-        : "customerToken";
+//     // 4️⃣ Choose cookie name based on role
+//     const cookieName =
+//       role === "admin"
+//         ? "adminToken"
+//         : role === "driver"
+//         ? "driverToken"
+//         : "customerToken";
 
-    // 5️⃣ Clear all possible previous tokens to avoid conflicts
-//     res.clearCookie("token");
-// res.clearCookie("customerToken");
-// res.clearCookie("driverToken");
-// res.clearCookie("adminToken");
-
-
-    // 6️⃣ Set the role-based cookie
-  res.cookie(cookieName, token, {
-  httpOnly: true,
-  secure: true,          // ✅ must be true for cross-site cookies
-  sameSite: "None",      // ✅ required by Chrome
-  path: "/",             // ✅ safe default
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-});
+//     // 5️⃣ Clear all possible previous tokens to avoid conflicts
+// //     res.clearCookie("token");
+// // res.clearCookie("customerToken");
+// // res.clearCookie("driverToken");
+// // res.clearCookie("adminToken");
 
 
+//     // 6️⃣ Set the role-based cookie
+//   res.cookie(cookieName, token, {
+//   httpOnly: true,
+//   secure: true,          // ✅ must be true for cross-site cookies
+//   sameSite: "None",      // ✅ required by Chrome
+//   path: "/",             // ✅ safe default
+//   maxAge: 7 * 24 * 60 * 60 * 1000,
+// });
 
-  res.status(200).json({
-  success: true,
-  message: `${role} logged in successfully`,
-  token, // ✅ Send token in response
-  user: {
-    id: user._id,
-    email: user.email,
-    role: user.role,
-    status: user.status,
-  },
-});
+
+
+    // 7️⃣ Send response
+    res.status(200).json({
+      success: true,
+      message: `${role} logged in successfully`,
+      token,
+      cookieName,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+      },
+    });
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ message: "Server error" });
