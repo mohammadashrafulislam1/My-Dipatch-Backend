@@ -169,12 +169,13 @@ export const login = async (req, res) => {
 
 
     // 6️⃣ Set the role-based cookie
-   res.cookie(cookieName, token, {
+  res.cookie(cookieName, token, {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production", // only true in production
-  sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax", // safe for localhost
+  secure: true, // ✅ Always true in production
+  sameSite: "None", // ✅ Required for Chrome cross-site
   maxAge: 7 * 24 * 60 * 60 * 1000,
 });
+
 
 
     // 7️⃣ Send response
