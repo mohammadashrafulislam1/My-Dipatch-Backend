@@ -1,16 +1,15 @@
-// middleware/auth.js
+// Middleware/jwt.js
 import jwt from "jsonwebtoken";
 
-export const verifyToken = (role) => (req, res, next) => {
-  let token;
-  if (role === 'customer') token = req.cookies.customerToken;
-  else if (role === 'driver') token = req.cookies.driverToken;
-  else if (role === 'admin') token = req.cookies.adminToken;
-
-  if (!token) return res.status(401).json({ message: "Unauthorized" });
-
+export const verifyToken = (req, res, next) => {
   try {
-    req.decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer "))
+      return res.status(401).json({ message: "Unauthorized" });
+
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.decoded = decoded;
     next();
   } catch (err) {
     return res.status(401).json({ message: "Invalid token" });

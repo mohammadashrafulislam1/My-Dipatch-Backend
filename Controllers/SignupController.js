@@ -179,19 +179,17 @@ export const login = async (req, res) => {
 
 
 
-    // 7️⃣ Send response
-    res.status(200).json({
-      success: true,
-      message: `${role} logged in successfully`,
-      token,
-      cookieName,
-      user: {
-        id: user._id,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-      },
-    });
+  res.status(200).json({
+  success: true,
+  message: `${role} logged in successfully`,
+  token, // ✅ Send token in response
+  user: {
+    id: user._id,
+    email: user.email,
+    role: user.role,
+    status: user.status,
+  },
+});
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ message: "Server error" });
