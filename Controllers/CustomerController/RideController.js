@@ -116,52 +116,73 @@ export const requestRide = async (req, res) => {
 
 
 
-// Update ride status (for admin or driver)
+// ✅ Update ride status (supports driver assignment)
 export const updateRideStatus = async (req, res) => {
-    const { rideId } = req.params;
-    const { status } = req.body;
-  
-    const allowedStatuses = ["pending", "accepted", "on_the_way", "in_progress", "completed", "cancelled"];
-    if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({ message: "Invalid status value." });
-    }
-  
-    try {
-      const updated = await RideModel.findByIdAndUpdate(
-        rideId,
-        { status, updatedAt: new Date() },
-        { new: true }
-      );
-  
-      if (!updated) return res.status(404).json({ message: "Ride not found" });
-      // Inside updateRideStatus, after updating status:
-if (status === "completed") {
-  const ride = await RideModel.findById(rideId);
-  const wallet = await WalletModel.findOne({ userId: ride.customerId });
-  if (wallet && ride.price && wallet.balance >= ride.price) {
-    wallet.balance -= ride.price;
-    await wallet.save();
-    await WalletTransaction.create({
-      userId: ride.customerId,
-      amount: ride.price,
-      type: "ride_fare",
-      metadata: { rideId }
-    });
+  const { rideId } = req.params;
+  const { status, driverId } = req.body;
+
+  const allowedStatuses = [
+    "pending",
+    "accepted",
+    "on_the_way",
+    "in_progress",
+    "completed",
+    "cancelled",
+  ];
+
+  if (!allowedStatuses.includes(status)) {
+    return res.status(400).json({ message: "Invalid status value." });
   }
-   // Create wallet transaction
-   await createTransaction(ride);
-}
-  
-      if (req.io) {
-        req.io.to(updated.customerId.toString()).emit("ride-status-update", updated);
-      }
-  
-      res.json(updated);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: "Failed to update ride status" });
+
+  try {
+    const ride = await RideModel.findById(rideId);
+    if (!ride) return res.status(404).json({ message: "Ride not found." });
+
+    // ✅ Prevent another driver from stealing the ride
+    if (ride.driverId && ride.driverId.toString() !== driverId && status === "accepted") {
+      return res.status(400).json({ message: "Ride already accepted by another driver." });
     }
-  };
+
+    // ✅ Assign driver when accepted
+    if (status === "accepted" && driverId) {
+      ride.driverId = driverId;
+    }
+
+    ride.status = status;
+    ride.updatedAt = new Date();
+    await ride.save();
+
+    // 💰 Wallet deduction when completed
+    if (status === "completed") {
+      const wallet = await WalletModel.findOne({ userId: ride.customerId });
+      if (wallet && ride.price && wallet.balance >= ride.price) {
+        wallet.balance -= ride.price;
+        await wallet.save();
+
+        await WalletTransaction.create({
+          userId: ride.customerId,
+          amount: ride.price,
+          type: "ride_fare",
+          metadata: { rideId },
+        });
+      }
+
+      // Create admin commission transaction
+      await createTransaction(ride);
+    }
+
+    // 🔔 Notify customer of ride status updates
+    if (req.io) {
+      req.io.to(ride.customerId.toString()).emit("ride-status-update", ride);
+    }
+
+    res.json(ride);
+  } catch (err) {
+    console.error("❌ updateRideStatus error:", err);
+    res.status(500).json({ message: "Failed to update ride status" });
+  }
+};
+
   
 // Get ride history for a specific customer
 export const getRideHistory = async (req, res) => {
