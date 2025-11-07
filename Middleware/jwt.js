@@ -11,8 +11,15 @@ export const verifyToken = (expectedRole) => {
 
       const token = authHeader.split(" ")[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.decoded = decoded;
 
+      // ✅ Attach user data directly for controllers to use
+      req.user = {
+        id: decoded.id || decoded._id, // token payload must include this
+        type: decoded.type || decoded.role || "customer", // safe fallback
+        role: decoded.role,
+      };
+
+      // ✅ Check role if expectedRole is specified
       if (expectedRole && decoded.role !== expectedRole) {
         return res.status(403).json({ message: "Forbidden: Invalid role" });
       }
