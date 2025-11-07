@@ -148,10 +148,11 @@ export const login = async (req, res) => {
 
     // 3️⃣ Generate token
     const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+  { id: user._id, email: user.email, role: user.role, type: user.role },
+  process.env.JWT_SECRET,
+  { expiresIn: "7d" }
+);
+
 
 //     // 4️⃣ Choose cookie name based on role
 //     const cookieName =
