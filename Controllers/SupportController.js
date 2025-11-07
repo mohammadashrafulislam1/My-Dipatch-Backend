@@ -19,20 +19,21 @@ export const getSupportCenter = async (req, res) => {
   };
   
   export const createTicket = async (req, res) => {
-    try {
-      const newTicket = new SupportTicket({
-        userId: req.user.id,
-        userType: req.user.type,
-        issue: req.body.issue
-      });
-  
-      await newTicket.save();
-      res.redirect('/support');
-    } catch (err) {
-      console.log(err)
-      res.status(500).send('Server Error');
-    }
-  };
+  try {
+    const newTicket = new SupportTicket({
+      userId: req.user.id,
+      userType: req.user.type,
+      issue: req.body.issue,
+    });
+
+    await newTicket.save();
+    res.status(201).json({ message: 'Ticket created successfully', ticket: newTicket });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
   
   // Admin FAQ Management
   export const manageFAQs = async (req, res) => {
