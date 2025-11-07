@@ -3,20 +3,21 @@ import { SupportTicket } from "../Model/SupportTicket.js";
 
 // Driver/Customer Support Center
 export const getSupportCenter = async (req, res) => {
-    try {
-      const tickets = await SupportTicket.find({ userId: req.user.id }).sort('-createdAt');
-      const faqs = await FaqModel.find({ category: req.user.type });
-      
-      res.render('support/center', {
-        tickets,
-        faqs,
-        userType: req.user.type
-      });
-    } catch (err) {
-      console.log(err)
-      res.status(500).send('Server Error');
-    }
-  };
+  try {
+    const tickets = await SupportTicket.find({ userId: req.user.id }).sort('-createdAt');
+    const faqs = await FaqModel.find({ category: req.user.type });
+
+    res.status(200).json({
+      tickets,
+      faqs,
+      userType: req.user.type,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
   
   export const createTicket = async (req, res) => {
   try {
