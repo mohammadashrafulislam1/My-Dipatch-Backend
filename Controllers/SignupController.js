@@ -148,10 +148,11 @@ export const login = async (req, res) => {
 
     // 3️⃣ Generate token
     const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+  { id: user._id, email: user.email, role: user.role, type: user.role },
+  process.env.JWT_SECRET,
+  { expiresIn: "7d" }
+);
+
 
 //     // 4️⃣ Choose cookie name based on role
 //     const cookieName =
@@ -201,20 +202,17 @@ export const login = async (req, res) => {
 // Get current user
 export const getCurrentUser = async (req, res) => {
   try {
-    const { id, role } = req.decoded; // Extract from decoded token
+    const { id, role } = req.user; // ✅ fixed
 
     if (!id || !role) {
       return res.status(400).json({ message: "Invalid token payload." });
     }
 
-    // Fetch user based on role (if you have different models, you could branch here)
-    const user = await UserModel.findById(id).select("-password"); // exclude password field
-
+    const user = await UserModel.findById(id).select("-password");
     if (!user) {
       return res.status(404).json({ message: `${role} not found.` });
     }
 
-    // Optionally double-check if token role matches DB role
     if (user.role !== role) {
       return res.status(403).json({ message: "Role mismatch. Unauthorized." });
     }
@@ -229,6 +227,7 @@ export const getCurrentUser = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 // Get all users:
 export const getUsers = async (req, res) =>{
