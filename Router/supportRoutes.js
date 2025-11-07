@@ -6,5 +6,6 @@ import { verifyToken } from '../Middleware/jwt.js';
 export const supportRouter = express.Router();
 
 // Driver/Customer Support Center
-supportRouter.get('/', verifyToken, getSupportCenter);
+supportRouter.get('/driver', verifyToken("driver"), getSupportCenter);
+supportRouter.get('/customer', verifyToken("customer"), getSupportCenter);
 supportRouter.post('/ticket', verifyToken, createTicket);
