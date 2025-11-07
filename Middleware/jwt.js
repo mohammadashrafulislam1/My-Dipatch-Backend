@@ -1,6 +1,7 @@
 // Middleware/jwt.js
 import jwt from "jsonwebtoken";
 
+// jwt.js
 export const verifyToken = (expectedRole) => {
   return (req, res, next) => {
     try {
@@ -12,16 +13,18 @@ export const verifyToken = (expectedRole) => {
       const token = authHeader.split(" ")[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // ✅ Attach user data directly for controllers to use
+      const userRole = decoded.role || decoded.type;
+
       req.user = {
-        id: decoded.id || decoded._id, // token payload must include this
-        type: decoded.type || decoded.role || "customer", // safe fallback
-        role: decoded.role,
+        id: decoded.id || decoded._id,
+        type: userRole,
+        role: userRole,
       };
 
-      // ✅ Check role if expectedRole is specified
-      if (expectedRole && decoded.role !== expectedRole) {
-        return res.status(403).json({ message: "Forbidden: Invalid role" });
+      if (expectedRole && userRole !== expectedRole) {
+        return res
+          .status(403)
+          .json({ message: `Forbidden: Only ${expectedRole}s allowed` });
       }
 
       next();
