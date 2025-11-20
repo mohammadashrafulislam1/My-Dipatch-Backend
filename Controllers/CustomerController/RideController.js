@@ -114,8 +114,6 @@ export const requestRide = async (req, res) => {
   }
 };
 
-
-
 // ✅ Update ride status (supports driver assignment)
 export const updateRideStatus = async (req, res) => {
   const { rideId } = req.params;
@@ -138,23 +136,43 @@ export const updateRideStatus = async (req, res) => {
     const ride = await RideModel.findById(rideId);
     if (!ride) return res.status(404).json({ message: "Ride not found." });
 
-    // ✅ Prevent another driver from stealing the ride
+    // Prevent stealing
     if (ride.driverId && ride.driverId.toString() !== driverId && status === "accepted") {
       return res.status(400).json({ message: "Ride already accepted by another driver." });
     }
 
-    // ✅ Assign driver when accepted
+    // Assign driver when accepting
     if (status === "accepted" && driverId) {
       ride.driverId = driverId;
+      ride.timestamps.acceptedAt = new Date();   // ⬅ NEW
     }
 
+    // Driver arrived at pickup
+    if (status === "on_the_way") {
+      ride.timestamps.arrivedAt = new Date();    // ⬅ NEW
+    }
+
+    // Driver picked up rider
+    if (status === "in_progress") {
+      ride.timestamps.pickupAt = new Date();     // ⬅ NEW
+    }
+
+    // Driver completed ride
+    if (status === "completed") {
+      ride.timestamps.dropoffAt = new Date();    // ⬅ NEW
+    }
+
+    // Set status & updated time
     ride.status = status;
     ride.updatedAt = new Date();
     await ride.save();
 
-    // 💰 Wallet deduction when completed
+    // ===========================
+    // WALLET LOGIC (already correct)
+    // ===========================
     if (status === "completed") {
       const wallet = await WalletModel.findOne({ userId: ride.customerId });
+
       if (wallet && ride.price && wallet.balance >= ride.price) {
         wallet.balance -= ride.price;
         await wallet.save();
@@ -167,11 +185,10 @@ export const updateRideStatus = async (req, res) => {
         });
       }
 
-      // Create admin commission transaction
-      await createTransaction(ride);
+      await createTransaction(ride); // admin commission
     }
 
-    // 🔔 Notify customer of ride status updates
+    // Notify customer via socket
     if (req.io) {
       req.io.to(ride.customerId.toString()).emit("ride-status-update", ride);
     }
@@ -182,7 +199,6 @@ export const updateRideStatus = async (req, res) => {
     res.status(500).json({ message: "Failed to update ride status" });
   }
 };
-
   
 // Get ride history for a specific customer
 export const getRideHistory = async (req, res) => {
