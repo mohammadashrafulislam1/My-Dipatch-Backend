@@ -54,7 +54,13 @@ distance: { type: String },
     type: Date,
     default: Date.now
   },
-  updatedAt: Date
+  updatedAt: Date,
+  timestamps: {
+    acceptedAt,
+    arrivedAt,
+    pickupAt,
+    dropoffAt
+}
 });
 
 rideSchema.pre("save", function (next) {
