@@ -135,6 +135,7 @@ export const updateRideStatus = async (req, res) => {
   try {
     const ride = await RideModel.findById(rideId);
     if (!ride) return res.status(404).json({ message: "Ride not found." });
+console.log("Updating timestamps:", ride.timestamps);
 
     // Prevent stealing
     if (ride.driverId && ride.driverId.toString() !== driverId && status === "accepted") {
