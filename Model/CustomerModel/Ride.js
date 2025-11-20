@@ -12,6 +12,13 @@ const locationSchema = new mongoose.Schema({
   }
 }, { _id: false });
 
+const timestampsSchema = new mongoose.Schema({
+  acceptedAt: { type: Date, default: null },
+  arrivedAt: { type: Date, default: null },
+  pickupAt: { type: Date, default: null },
+  dropoffAt: { type: Date, default: null }
+}, { _id: false });
+
 const rideSchema = new mongoose.Schema({
   customerId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -55,12 +62,7 @@ distance: { type: String },
     default: Date.now
   },
   updatedAt: Date,
- timestamps: {
-  acceptedAt: { type: Date, default: null },
-  arrivedAt: { type: Date, default: null },
-  pickupAt: { type: Date, default: null },
-  dropoffAt: { type: Date, default: null }
-},
+timestamps: { type: timestampsSchema, default: {} },
 
 });
 
