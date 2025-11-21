@@ -10,7 +10,8 @@ export const userRouter = express.Router();
 userRouter.post('/signup', upload.single('profileImage'), CreateSignupController);
 userRouter.post('/login', login)
 userRouter.post('/logout', logout)
-userRouter.put("/update", verifyToken, upload.single("profileImage"), updateUserProfile);
+userRouter.put("/update/driver", verifyToken("driver"), upload.single("profileImage"), updateUserProfile); 
+userRouter.put("/update/customer", verifyToken("customer"), upload.single("profileImage"), updateUserProfile); 
 // Get current user route (protected)
 userRouter.get('/me/customer', verifyToken('customer'), getCurrentUser);
 userRouter.get('/me/driver', verifyToken('driver'), getCurrentUser);
