@@ -8,6 +8,7 @@ import { createTransaction } from "../AdminController/WalletController.js";
 import { PricingModel } from "../../Model/AdminModel/Pricing.js";
 
 // Create a new ride request
+// Create a new ride request
 export const requestRide = async (req, res) => {
   try {
     const {
@@ -27,7 +28,7 @@ export const requestRide = async (req, res) => {
     const waypoints =
       midwayStops?.map((stop) => `${stop.lat},${stop.lng}`).join("|") || "";
 
-    // Call Google Directions API (still using legacy endpoint here)
+    // Google Directions API
     const googleRes = await axios.get(
       "https://maps.googleapis.com/maps/api/directions/json",
       {
@@ -45,7 +46,7 @@ export const requestRide = async (req, res) => {
       googleRes.data.status !== "OK" ||
       !googleRes.data.routes.length
     ) {
-      console.error("❌ Google Directions API error:", googleRes.data);
+      console.error("❌ Google API error:", googleRes.data);
       return res.status(400).json({
         message: "Unable to get route from Google Maps API",
         details: googleRes.data?.status || "NO_RESPONSE",
@@ -64,22 +65,34 @@ export const requestRide = async (req, res) => {
     const distanceKm = (totalDistance / 1000).toFixed(2);
     const etaMin = Math.round(totalDuration / 60);
 
-    // 👉 Fetch pricing settings from DB
+    // 👉 Fetch pricing settings
     const settings = await PricingModel.getSettings();
-    const basePrice = settings.pricePerKm * parseFloat(distanceKm);
 
-    // Apply commission
-    const finalPrice =
-      basePrice + (basePrice * settings.adminCommission) / 100;
+    // Base fare
+    const baseFare = settings.pricePerKm * parseFloat(distanceKm);
 
-    // Create ride with calculated price
+    // Admin commission
+    const adminCut = (baseFare * settings.adminCommission) / 100;
+
+    // DRIVER earning (price displayed to driver)
+    const driverEarning = baseFare - adminCut;
+
+    // CUSTOMER fare (what customer pays)
+    const customerFare = baseFare + adminCut;
+
+    // Save ride
     const newRide = new RideModel({
       customerId,
       pickup,
       dropoff,
       midwayStops,
       instructions,
-      price: finalPrice.toFixed(2), // 💰 calculated, not from frontend
+
+      // ⭐ FINAL LOGIC ⭐
+      price: driverEarning.toFixed(2),     // WHAT DRIVER EARNS
+      customerFare: customerFare.toFixed(2), // WHAT CUSTOMER PAYS
+      adminCut: adminCut.toFixed(2),        // ADMIN CUT AMOUNT
+
       status: "pending",
       eta: `${etaMin} min`,
       distance: `${distanceKm} km`,
@@ -87,9 +100,8 @@ export const requestRide = async (req, res) => {
 
     await newRide.save();
 
-    // Notify drivers (same logic as before)
+    // Socket emit to active drivers
     if (req.io) {
-      console.log("🔔 Emitting new-ride-request to active connected drivers...");
       const activeDrivers = await UserModel.find({
         role: "driver",
         status: "active",
@@ -99,7 +111,6 @@ export const requestRide = async (req, res) => {
         const userId = driver._id.toString();
         if (onlineUsers[userId]) {
           req.io.to(userId).emit("new-ride-request", newRide);
-          console.log(`📢 Emitted new-ride-request to driver ${userId}`);
         }
       });
     }
@@ -108,9 +119,13 @@ export const requestRide = async (req, res) => {
       message: "Ride request created successfully.",
       ride: newRide,
     });
+
   } catch (err) {
     console.error("Ride request error:", err);
-    res.status(500).json({ message: "Server error creating ride request." });
+    res.status(500).json({
+      message: "Server error creating ride request.",
+      error: err.message,
+    });
   }
 };
 

@@ -50,6 +50,14 @@ const rideSchema = new mongoose.Schema({
     type: Number,
     required: false, // Or true if you always calculate upfront
   },
+  customerFare: {
+    type: Number,
+    required: false, // Or true if you always calculate upfront
+  },
+  adminCut: {
+    type: Number,
+    required: false, // Or true if you always calculate upfront
+  },
   status: {
     type: String,
     enum: ["pending", "accepted", "on_the_way", "in_progress", "at_stop", "completed", "cancelled"],
