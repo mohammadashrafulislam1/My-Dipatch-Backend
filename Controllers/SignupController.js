@@ -302,6 +302,51 @@ export const logout = (req, res) => {
   res.json({ success: true, message: "Logged out successfully" });
 };
 
+// UPDATE USER PROFILE
+export const updateUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.id; // comes from verifyToken middleware
+    const { firstName, lastName, email, phone, city } = req.body;
+
+    const user = await UserModel.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    // ---- Handle image upload (optional) ----
+    if (req.file) {
+      // Delete previous cloudinary image
+      if (user.public_id) {
+        await cloudinary.uploader.destroy(user.public_id);
+      }
+
+      const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+        folder: "localRun/profileImage",
+      });
+
+      user.profileImage = uploadResult.secure_url;
+      user.public_id = uploadResult.public_id;
+
+      fs.unlinkSync(req.file.path); // delete temp file
+    }
+
+    // ---- Update fields ----
+    if (firstName) user.firstName = firstName;
+    if (lastName) user.lastName = lastName;
+    if (email) user.email = email.toLowerCase();
+    if (phone) user.phone = phone;
+    if (city) user.city = city;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully.",
+      user,
+    });
+  } catch (err) {
+    console.error("Update error:", err);
+    res.status(500).json({ message: "Internal Server Error." });
+  }
+};
 
 
 // Delete user with id:
