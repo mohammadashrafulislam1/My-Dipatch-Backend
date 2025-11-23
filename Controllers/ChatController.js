@@ -240,8 +240,9 @@ export const sendAdminMessage = async (req, res) => {
 // Get chat history
 export const getChatHistoryByRide = async (req, res) => {
   const { rideId } = req.params;
-  const userId = req.decoded.id; // ✅ use decoded from middleware
-  const userRole = req.decoded.role; // optional
+ const userId = req.user.id;
+const userRole = req.user.role;
+
   console.log(req.decoded.id)
   try {
     const ride = await RideModel.findById(rideId);
