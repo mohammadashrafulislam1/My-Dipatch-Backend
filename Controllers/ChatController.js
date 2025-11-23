@@ -243,7 +243,7 @@ export const getChatHistoryByRide = async (req, res) => {
  const userId = req.user.id;
 const userRole = req.user.role;
 
-  console.log(req.decoded.id)
+  console.log(req.user.id)
   try {
     const ride = await RideModel.findById(rideId);
     if (!ride) return res.status(404).json({ message: "Ride not found" });
