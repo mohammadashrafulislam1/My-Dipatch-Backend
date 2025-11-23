@@ -286,6 +286,67 @@ export const getAllRides = async (req, res) => {
   }
 };
 
+// ⭐ NEW: Calculate fare without creating ride
+export const calculateFare = async (req, res) => {
+  try {
+    const { pickup, dropoff, midwayStops } = req.body;
+
+    if (!pickup || !dropoff) {
+      return res.status(400).json({ message: "Missing pickup/dropoff" });
+    }
+
+    const waypoints =
+      midwayStops?.map((stop) => `${stop.lat},${stop.lng}`).join("|") || "";
+
+    // Google API call
+    const googleRes = await axios.get(
+      "https://maps.googleapis.com/maps/api/directions/json",
+      {
+        params: {
+          origin: `${pickup.lat},${pickup.lng}`,
+          destination: `${dropoff.lat},${dropoff.lng}`,
+          waypoints,
+          key: process.env.GOOGLE_MAPS_API_KEY,
+        },
+      }
+    );
+
+    if (googleRes.data.status !== "OK")
+      return res.status(400).json({ message: "Google map error" });
+
+    const route = googleRes.data.routes[0];
+
+    let totalDistance = 0;
+    let totalDuration = 0;
+    route.legs.forEach((leg) => {
+      totalDistance += leg.distance.value;
+      totalDuration += leg.duration.value;
+    });
+
+    const distanceKm = (totalDistance / 1000).toFixed(2);
+    const etaMin = Math.round(totalDuration / 60);
+
+    // Pricing settings
+    const settings = await PricingModel.getSettings();
+
+    const baseFare = settings.pricePerKm * parseFloat(distanceKm);
+    const adminCut = (baseFare * settings.adminCommission) / 100;
+
+    const driverEarning = baseFare - adminCut;
+    const customerFare = baseFare + adminCut;
+
+    res.json({
+      distance: distanceKm + " km",
+      eta: etaMin + " min",
+      customerFare: customerFare.toFixed(2),
+      driverEarning: driverEarning.toFixed(2),
+      adminCut: adminCut.toFixed(2),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Price calculation failed" });
+  }
+};
 
 // Get ride history for a specific Driver
 export const getDriverRideHistory = async (req, res) => {
