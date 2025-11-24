@@ -15,6 +15,7 @@ userRouter.put("/update/customer", verifyToken("customer"), upload.single("profi
 // Get current user route (protected)
 userRouter.get('/me/customer', verifyToken('customer'), getCurrentUser);
 userRouter.get('/me/driver', verifyToken('driver'), getCurrentUser);
+userRouter.get('/me/admin', verifyToken('admin'), getCurrentUser);
 
 userRouter.get('/', getUsers)
 userRouter.get('/:id',  getUserById)
