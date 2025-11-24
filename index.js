@@ -17,6 +17,7 @@ import { policyRouter } from "./Router/policyRoutes.js";
 import { faqRouter } from "./Router/faqRoutes.js";
 import { supportRouter } from "./Router/supportRoutes.js";
 import cookieParser from "cookie-parser";
+import { adminRouter } from "./Router/AdminRouter/adminRoutes.js";
 
 configDotenv();
 
@@ -59,6 +60,7 @@ app.use("/api/wallet", walletRouter);
 app.use("/api/support", supportRouter);
 app.use("/api/review", reviewRouter);
 app.use("/api/admin/pricing", pricingRouter);
+app.use("/api/admin", adminRouter);
 app.use("/api/admin/wallet", walletRouterr);
 app.use("/api/policy", policyRouter);
 app.use("/api/faqs", faqRouter);
