@@ -8,5 +8,6 @@ export const supportRouter = express.Router();
 // Driver/Customer Support Center
 supportRouter.get('/driver', verifyToken("driver"), getSupportCenter);
 supportRouter.get('/customer', verifyToken("customer"), getSupportCenter);
+supportRouter.get('/admin', getSupportCenter);
 supportRouter.post('/ticket/driver', verifyToken("driver"), createTicket);
 supportRouter.post('/ticket/customer', verifyToken("customer"), createTicket);
