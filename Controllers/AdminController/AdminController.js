@@ -1,5 +1,5 @@
-import { RideModel } from "../../Model/CustomerModel/Ride";
-import { UserModel } from "../../Model/User";
+import { RideModel } from "../../Model/CustomerModel/Ride.js";
+import { UserModel } from "../../Model/User.js";
 
 
 // Get pending rides for admin
