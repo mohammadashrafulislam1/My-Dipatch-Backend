@@ -42,6 +42,10 @@ const userSchema = new mongoose.Schema({
     enum: ['active', 'inactive'],
     default: undefined // we’ll set it manually for drivers
   },
+  isActive:{
+    type: Boolean,
+    default: false,
+  },
     rating: {
       type: Number,
       default: 0
