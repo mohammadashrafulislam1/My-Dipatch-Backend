@@ -18,6 +18,31 @@ export const getSupportCenter = async (req, res) => {
   }
 };
 
+export const getSupportAll = async (req, res) => {
+  try {
+    // ✅ Extra safety: ensure the user is admin
+    if (req.user?.type !== "admin") {
+      return res.status(403).json({ message: "Access denied. Admins only." });
+    }
+
+    // ✅ Admin: see ALL tickets, regardless of user type
+    const tickets = await SupportTicket.find()
+      .populate("userId", "name email type") // adjust fields to your schema
+      .sort("-createdAt");
+
+    // Optional: admin can see all FAQs
+    const faqs = await FaqModel.find();
+
+    return res.status(200).json({
+      tickets,
+      faqs,
+      userType: req.user.type, // "admin"
+    });
+  } catch (err) {
+    console.error("Error in getSupportAll:", err);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
   
   export const createTicket = async (req, res) => {
   try {
