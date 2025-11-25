@@ -60,6 +60,30 @@ export const getSupportAll = async (req, res) => {
   }
 };
 
+export const replyToTicket = async (req, res) => {
+  try {
+    const { ticketId, reply, status } = req.body;
+
+    if (!ticketId || !reply) {
+      return res.status(400).json({ message: "Missing fields" });
+    }
+
+    const ticket = await SupportTicket.findById(ticketId);
+    if (!ticket) return res.status(404).json({ message: "Ticket not found" });
+
+    ticket.reply = reply;
+    if (status) ticket.status = status;
+    ticket.repliedAt = new Date();
+
+    await ticket.save();
+
+    res.status(200).json({ message: "Reply sent successfully", ticket });
+  } catch (err) {
+    console.error("Reply Ticket Error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
   
   // Admin FAQ Management
   export const manageFAQs = async (req, res) => {
