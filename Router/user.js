@@ -1,4 +1,4 @@
-import { CreateSignupController, deleteUser, getCurrentUser, 
+import { ActiveUserStatus, CreateSignupController, deleteUser, getCurrentUser, 
     getUserById, 
     getUsers, login, logout, updateUserProfile, updateUserStatus } from "../Controllers/SignupController.js";
 import { verifyToken } from "../Middleware/jwt.js";
@@ -22,3 +22,4 @@ userRouter.get('/:id',  getUserById)
 userRouter.delete('/:id',  deleteUser)
 // PUT /api/users/:id/status
 userRouter.put('/:id/status', updateUserStatus);
+userRouter.put('/:id/active', ActiveUserStatus);

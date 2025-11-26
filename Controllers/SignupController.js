@@ -255,8 +255,39 @@ export const getUserById = async (req, res) => {
 };
 
 
-// Change user activation (for drivers only)
+// Change user status (for drivers only)
 export const updateUserStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  try {
+    const user = await UserModel.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (user.role !== 'driver') {
+      return res.status(400).json({ message: "Status can only be updated for drivers." });
+    }
+    
+
+    if (!['active', 'inactive'].includes(status)) {
+      return res.status(400).json({ message: "Invalid status value." });
+    }
+
+    user.status = status;
+    await user.save();
+
+    res.status(200).json({ message: `Driver status updated to ${status}.`, user });
+  } catch (error) {
+    console.error("Update status error:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+// Change user activation (for drivers only)
+export const ActiveUserStatus = async (req, res) => {
   const { id } = req.params;
   const { isActive } = req.body; // expecting true or false
 
@@ -288,7 +319,6 @@ export const updateUserStatus = async (req, res) => {
     res.status(500).json({ message: "Internal server error." });
   }
 };
-
 
 export const logout = (req, res) => {
   const cookieOptions = {
