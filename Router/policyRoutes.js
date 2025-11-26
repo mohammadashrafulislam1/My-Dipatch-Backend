@@ -5,7 +5,7 @@ import { verifyToken } from "../Middleware/jwt.js";
 export const policyRouter = express.Router();
 
 // Get both policies (public access)
-policyRouter.get("/", verifyToken("admin"), getPolicies);
+policyRouter.get("/", getPolicies);
 
 // Update a policy (admin only)
 policyRouter.put("/:type", verifyToken("admin"), updatePolicy);
