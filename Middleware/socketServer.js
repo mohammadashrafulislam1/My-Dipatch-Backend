@@ -27,7 +27,30 @@ export const initSocket = (server) => {
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
 
-    // ... your existing chat message code ...
+   // SAVE CHAT MESSAGE + EMIT TO RECIPIENT
+    socket.on("chat-message", async ({ rideId, senderId, senderRole, recipientId, message, fileUrl, fileType }) => {
+      try {
+        const newMsg = new ChatMessage({
+          rideId,
+          senderId,
+          senderRole,
+          recipientId,
+          message: message || "",
+          fileUrl: fileUrl || null,
+          fileType: fileType || null,
+        });
+    
+        await newMsg.save();
+
+        io.to(recipientId).emit("chat-message", newMsg);
+
+        if (senderRole === "admin") {
+          console.log("Admin sent:", message || fileUrl);
+        }
+      } catch (err) {
+        console.error("Socket chat-message error:", err);
+      }
+    });
 
     // Handle join event from customer/driver/admin
     socket.on("join", async ({ userId, role }) => {
