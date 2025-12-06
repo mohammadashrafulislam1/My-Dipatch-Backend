@@ -273,7 +273,7 @@ const userRole = req.user.role;
 // ChatController.js
 export const getUnreadChatCount = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const count = await ChatMessage.countDocuments({
       recipientId: userId,
       read: false,
