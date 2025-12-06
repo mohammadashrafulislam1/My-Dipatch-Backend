@@ -287,7 +287,7 @@ export const getUnreadChatCount = async (req, res) => {
 
 export const markMessagesAsRead = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { rideId } = req.body;
 
     await ChatMessage.updateMany(
