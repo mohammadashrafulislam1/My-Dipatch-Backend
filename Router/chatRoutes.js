@@ -1,5 +1,5 @@
 import express from "express";
-import { deleteRideChat, getChatHistoryByRide, sendAdminMessage, sendChatMessage, uploadChatFile } from "../Controllers/ChatController.js";
+import { deleteRideChat, getChatHistoryByRide, getUnreadChatCount, markMessagesAsRead, sendAdminMessage, sendChatMessage, uploadChatFile } from "../Controllers/ChatController.js";
 import { upload } from "../Middleware/upload.js";
 import { verifyToken } from "../Middleware/jwt.js";
 
@@ -16,3 +16,6 @@ chatRouter.post("/send", sendChatMessage);
 
 // Delete all chat messages for a completed ride (admin or system only — add auth as needed)
 chatRouter.delete("/ride/:rideId", deleteRideChat);
+
+chatRouter.get("/unread", verifyToken(), getUnreadChatCount);
+chatRouter.post("/mark-read", verifyToken(), markMessagesAsRead);

@@ -269,3 +269,35 @@ const userRole = req.user.role;
     res.status(500).json({ message: "Error retrieving messages" });
   }
 };
+
+// ChatController.js
+export const getUnreadChatCount = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const count = await ChatMessage.countDocuments({
+      recipientId: userId,
+      read: false,
+    });
+    res.status(200).json({ unreadCount: count });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error fetching unread count" });
+  }
+};
+
+export const markMessagesAsRead = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { rideId } = req.body;
+
+    await ChatMessage.updateMany(
+      { rideId, recipientId: userId, read: false },
+      { $set: { read: true } }
+    );
+
+    res.status(200).json({ message: "Messages marked as read" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error marking messages read" });
+  }
+};
