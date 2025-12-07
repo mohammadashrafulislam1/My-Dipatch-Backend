@@ -463,6 +463,3 @@ export const getIO = () => {
   }
   return io;
 };
-
-// ========== EXPORT THE NOTIFICATION FUNCTIONS ==========
-export { notifyDriversOfNewRide };
