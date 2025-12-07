@@ -73,6 +73,19 @@ export const getDriverReviews = async (req, res) => {
   }
 };
 
+// In ReviewController.js
+export const checkReviewExists = async (req, res) => {
+  const { rideId } = req.params;
+
+  try {
+    const review = await ReviewModel.findOne({ rideId });
+    res.status(200).json({ exists: !!review });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ exists: false });
+  }
+};
+
 // Helper: Update driver's average rating
 const updateDriverRating = async (driverId) => {
   const reviews = await ReviewModel.find({ driverId });

@@ -1,5 +1,5 @@
 import express from "express";
-import { getDriverReviews, submitReview } from "../Controllers/ReviewController.js";
+import { checkReviewExists, getDriverReviews, submitReview } from "../Controllers/ReviewController.js";
 
 export const reviewRouter = express.Router();
 
@@ -8,3 +8,5 @@ reviewRouter.post("/", submitReview);
 
 // Driver gets their reviews
 reviewRouter.get("/driver/:driverId", getDriverReviews);
+
+reviewRouter.get("/check/:rideId", checkReviewExists);
