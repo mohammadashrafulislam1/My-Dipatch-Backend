@@ -4,7 +4,7 @@ import { Notification } from "../Model/Notification.js";
 // Get notifications for a user
 export const getUserNotifications = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const  userId  = req.user.id;
     const { limit = 20, page = 1, unreadOnly = false } = req.query;
     
     const query = { userId };
@@ -42,7 +42,7 @@ export const getUserNotifications = async (req, res) => {
 export const markAsRead = async (req, res) => {
   try {
     const { notificationId } = req.params;
-    const { userId } = req.user;
+    const  userId  = req.user.id;
     
     const notification = await Notification.findOneAndUpdate(
       { _id: notificationId, userId },
@@ -64,7 +64,7 @@ export const markAsRead = async (req, res) => {
 // Mark all as read
 export const markAllAsRead = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const  userId  = req.user.id;
     
     await Notification.updateMany(
       { userId, read: false },
@@ -82,7 +82,7 @@ export const markAllAsRead = async (req, res) => {
 export const deleteNotification = async (req, res) => {
   try {
     const { notificationId } = req.params;
-    const { userId } = req.user;
+    const userId  = req.user.id;
     
     const notification = await Notification.findOneAndDelete({ 
       _id: notificationId, 
