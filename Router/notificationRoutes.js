@@ -1,7 +1,7 @@
 // routes/notificationRoutes.js
 import express from 'express';
 import { deleteNotification, getUserNotifications, markAllAsRead, markAsRead } from '../Controllers/NotificationController.js';
-import { verifyToken() } from '../Middleware/jwt.js';
+import { verifyToken } from '../Middleware/jwt.js';
 
 const notificationRouter = express.Router();
 
