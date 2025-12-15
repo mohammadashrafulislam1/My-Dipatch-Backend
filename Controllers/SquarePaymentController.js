@@ -1,0 +1,220 @@
+
+import { SquarePaymentModel } from '../Model/SquarePayment.js';
+import { SquarePaymentService } from '../services/SquarePaymentService.js';
+
+export class SquarePaymentController {
+  // Process payment when customer confirms ride
+  static async processPayment(req, res) {
+    try {
+      const {
+        rideId,
+        cardToken,
+        customerId,
+        totalAmount,
+        driverAmount,
+        adminAmount
+      } = req.body;
+
+      // Validate
+      if (!rideId || !cardToken || !customerId || !totalAmount || !driverAmount || !adminAmount) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing required fields"
+        });
+      }
+
+      // Process payment
+      const paymentResult = await SquarePaymentService.processRidePayment({
+        sourceId: cardToken,
+        rideId,
+        customerId,
+        totalAmount: parseFloat(totalAmount),
+        driverAmount: parseFloat(driverAmount),
+        adminAmount: parseFloat(adminAmount)
+      });
+
+      if (!paymentResult.success) {
+        return res.status(400).json({
+          success: false,
+          message: "Payment failed"
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Payment processed successfully",
+        payment: {
+          id: paymentResult.paymentId,
+          status: paymentResult.status,
+          amount: paymentResult.amount,
+          currency: paymentResult.currency,
+          receiptUrl: paymentResult.receiptUrl
+        }
+      });
+
+    } catch (error) {
+      console.error("Payment error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Payment processing failed",
+        error: error.message
+      });
+    }
+  }
+
+  // Mark driver as paid when ride completes
+  static async markDriverPaid(req, res) {
+    try {
+      const { rideId, driverId } = req.body;
+
+      const paymentRecord = await SquarePaymentModel.findOne({ rideId });
+      if (!paymentRecord) {
+        return res.status(404).json({
+          success: false,
+          message: "Payment record not found"
+        });
+      }
+
+      // Verify driver
+      if (paymentRecord.driverId && paymentRecord.driverId.toString() !== driverId) {
+        return res.status(403).json({
+          success: false,
+          message: "Unauthorized"
+        });
+      }
+
+      // Mark driver as paid
+      paymentRecord.driverId = driverId;
+      paymentRecord.driverPaid = true;
+      paymentRecord.driverPaidAt = new Date();
+      await paymentRecord.save();
+
+      // Call your existing DriverWalletController to add money to driver's wallet
+      // This uses your EXISTING system
+      const { addRideTransaction } = require('./DriverWalletController.js');
+      await addRideTransaction({
+        driverId,
+        amount: paymentRecord.driverAmount,
+        rideId: paymentRecord.rideId,
+        method: "square"
+      });
+
+      res.json({
+        success: true,
+        message: "Driver payment recorded",
+        amount: paymentRecord.driverAmount
+      });
+
+    } catch (error) {
+      console.error("Mark driver paid error:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  // Handle refund when ride is cancelled
+  static async handleRefund(req, res) {
+    try {
+      const { rideId, reason = "Ride cancelled" } = req.body;
+
+      const paymentRecord = await SquarePaymentModel.findOne({ rideId });
+      if (!paymentRecord) {
+        return res.status(404).json({
+          success: false,
+          message: "Payment record not found"
+        });
+      }
+
+      // Only refund if payment was successful
+      if (paymentRecord.paymentStatus !== 'paid') {
+        return res.status(400).json({
+          success: false,
+          message: "Payment not completed, cannot refund"
+        });
+      }
+
+      // Process refund through Square
+      const refundResult = await SquarePaymentService.refundPayment(
+        paymentRecord.squarePaymentId,
+        rideId,
+        paymentRecord.totalAmount,
+        reason
+      );
+
+      res.json({
+        success: true,
+        message: "Refund processed",
+        refund: refundResult
+      });
+
+    } catch (error) {
+      console.error("Refund error:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  // Get payment status
+  static async getPaymentStatus(req, res) {
+    try {
+      const { rideId } = req.params;
+
+      const paymentRecord = await SquarePaymentModel.findOne({ rideId });
+      if (!paymentRecord) {
+        return res.status(404).json({
+          success: false,
+          message: "No payment record found"
+        });
+      }
+
+      res.json({
+        success: true,
+        payment: paymentRecord
+      });
+
+    } catch (error) {
+      console.error("Get payment status error:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  // Get driver's Square earnings
+  static async getDriverSquareEarnings(req, res) {
+    try {
+      const { driverId } = req.params;
+
+      const payments = await SquarePaymentModel.find({
+        driverId,
+        driverPaid: true,
+        paymentStatus: 'paid'
+      });
+
+      const totalEarnings = payments.reduce((sum, payment) => sum + payment.driverAmount, 0);
+
+      res.json({
+        success: true,
+        totalEarnings,
+        payments: payments.map(p => ({
+          rideId: p.rideId,
+          amount: p.driverAmount,
+          date: p.driverPaidAt,
+          currency: p.currency
+        }))
+      });
+
+    } catch (error) {
+      console.error("Get driver earnings error:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+}

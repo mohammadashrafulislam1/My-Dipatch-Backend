@@ -19,6 +19,7 @@ import { supportRouter } from "./Router/supportRoutes.js";
 import cookieParser from "cookie-parser";
 import { adminRouter } from "./Router/AdminRouter/adminRoutes.js";
 import notificationRouter from "./Router/notificationRoutes.js";
+import squarePaymentRouter from "./Router/squarePaymentRoutes.js";
 
 configDotenv();
 
@@ -67,6 +68,7 @@ app.use("/api/admin/wallet", walletRouterr);
 app.use("/api/policy", policyRouter);
 app.use("/api/faqs", faqRouter);
 app.use("/api/notification", notificationRouter);
+app.use("/api/payment", squarePaymentRouter);
 
 // DB Connection
 if (!process.env.MongoDB_User || !process.env.MongoDB_Pass) {
