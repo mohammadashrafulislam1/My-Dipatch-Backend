@@ -1,4 +1,7 @@
 import express from "express";
+import mongoose from "mongoose";
+const ObjectId = mongoose.Types.ObjectId;
+
 import { deleteRideChat, getChatHistoryByRide, getUnreadChatCount, markMessagesAsRead, sendAdminMessage, sendChatMessage, uploadChatFile } from "../Controllers/ChatController.js";
 import { upload } from "../Middleware/upload.js";
 import { verifyToken } from "../Middleware/jwt.js";
@@ -27,38 +30,96 @@ chatRouter.delete("/ride/:rideId", deleteRideChat);
 chatRouter.get("/unread", verifyToken(), getUnreadChatCount);
 chatRouter.post("/mark-read", verifyToken(), markMessagesAsRead);
 
-// Add this route to chatRoutes.js
 chatRouter.get(
   "/admin/user/:userId",
   verifyToken("admin"),
   async (req, res) => {
     try {
       const { userId } = req.params;
-      const adminId = req.user._id; // Admin ID from token
+      const adminId = req.user._id;
       
-      console.log(`Fetching chat between admin ${adminId} and user ${userId}`);
+      console.log(`=== CHAT HISTORY REQUEST ===`);
+      console.log(`Admin ID: ${adminId}`);
+      console.log(`User ID: ${userId}`);
       
-      // Fetch all messages between admin and this user
-      // Use $or to get messages in both directions
+      // Convert string IDs to ObjectIds
+      const adminObjectId = new ObjectId(adminId);
+      const userObjectId = new ObjectId(userId);
+      
+      // Find rides involving this user (as driver or customer)
+      const rides = await RideModel.find({
+        $or: [
+          { driverId: userObjectId },
+          { customerId: userObjectId }
+        ]
+      }).select('_id');
+      
+      const rideIds = rides.map(ride => ride._id);
+      console.log(`Found ${rideIds.length} rides for user ${userId}:`, rideIds);
+      
+      // Query messages:
+      // 1. Direct admin-to-user messages (if you implement separate admin chat)
+      // 2. Messages from rides involving this user where admin participated
       const messages = await ChatMessage.find({
         $or: [
-          // Admin sent to user
-          { senderId: adminId, senderRole: "admin", recipientId: userId },
-          // User sent to admin
-          { senderId: userId, recipientId: adminId },
-          // Also include any messages where admin is recipient and user is sender
-          { senderId: userId, recipientId: adminId, senderRole: { $in: ["driver", "customer"] } }
+          // Direct admin-user messages
+          {
+            $or: [
+              { senderId: adminObjectId, recipientId: userObjectId },
+              { senderId: userObjectId, recipientId: adminObjectId }
+            ]
+          },
+          // Messages from user's rides where admin was sender
+          {
+            senderId: adminObjectId,
+            rideId: { $in: rideIds }
+          },
+          // Messages from user's rides where user was participant
+          {
+            $and: [
+              { rideId: { $in: rideIds } },
+              {
+                $or: [
+                  { senderId: userObjectId },
+                  { recipientId: userObjectId }
+                ]
+              }
+            ]
+          }
         ]
       })
       .sort({ createdAt: 1 })
-      .lean(); // Use lean() for better performance
+      .lean();
       
-      console.log(`Found ${messages.length} messages between admin ${adminId} and user ${userId}`);
+      console.log(`Found ${messages.length} messages total`);
+      
+      // Debug logging
+      if (messages.length > 0) {
+        console.log("Sample messages:");
+        messages.slice(0, 5).forEach((msg, i) => {
+          console.log(`[${i + 1}]`, {
+            _id: msg._id?.toString(),
+            senderId: msg.senderId?.toString(),
+            recipientId: msg.recipientId?.toString(),
+            rideId: msg.rideId?.toString(),
+            message: msg.message?.substring(0, 50) || '[file/empty]'
+          });
+        });
+      }
+      
+      // Format response
+      const formattedMessages = messages.map(msg => ({
+        ...msg,
+        _id: msg._id?.toString(),
+        senderId: msg.senderId?.toString(),
+        recipientId: msg.recipientId?.toString(),
+        rideId: msg.rideId?.toString()
+      }));
       
       res.status(200).json({ 
         success: true, 
-        messages,
-        count: messages.length 
+        messages: formattedMessages,
+        count: messages.length
       });
       
     } catch (err) {
