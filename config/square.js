@@ -1,23 +1,24 @@
-// config/square.js
-import { Client, Environment } from 'square';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
 
-// Initialize Square client
-const squareClient = new Client({
-  environment: process.env.NODE_ENV === 'production' 
-    ? Environment.Production 
-    : Environment.Sandbox,
+// IMPORTANT: SquareClient (not Client)
+const { SquareClient } = require('square');
+
+const squareClient = new SquareClient({
+  environment:
+    process.env.NODE_ENV === 'production'
+      ? 'production'
+      : 'sandbox',
   accessToken: process.env.SQUARE_ACCESS_TOKEN,
 });
 
-// Export individual APIs for easier use
-export const { 
-  paymentsApi, 
-  locationsApi, 
-  ordersApi, 
+export const {
+  paymentsApi,
+  locationsApi,
+  ordersApi,
   customersApi,
   refundsApi,
-  webhookSubscriptionsApi 
+  webhookSubscriptionsApi,
 } = squareClient;
 
-// Also export the full client if needed
 export default squareClient;
