@@ -1,23 +1,23 @@
 // routes/squarePaymentRoutes.js
 import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
 import { SquarePaymentController } from '../Controllers/SquarePaymentController.js';
+import { verifyToken } from '../Middleware/jwt.js';
 
 const squarePaymentRouter = express.Router();
 
 // Process Square payment
-squarePaymentRouter.post('/process', authenticateToken, SquarePaymentController.processPayment);
+squarePaymentRouter.post('/process', verifyToken(), SquarePaymentController.processPayment);
 
 // Mark driver as paid (call this when ride completes)
-squarePaymentRouter.post('/driver-paid', authenticateToken, SquarePaymentController.markDriverPaid);
+squarePaymentRouter.post('/driver-paid', verifyToken(), SquarePaymentController.markDriverPaid);
 
 // Handle refund
-squarePaymentRouter.post('/refund', authenticateToken, SquarePaymentController.handleRefund);
+squarePaymentRouter.post('/refund', verifyToken(), SquarePaymentController.handleRefund);
 
 // Get payment status
-squarePaymentRouter.get('/status/:rideId', authenticateToken, SquarePaymentController.getPaymentStatus);
+squarePaymentRouter.get('/status/:rideId', verifyToken(), SquarePaymentController.getPaymentStatus);
 
 // Get driver's Square earnings
-squarePaymentRouter.get('/driver-earnings/:driverId', authenticateToken, SquarePaymentController.getDriverSquareEarnings);
+squarePaymentRouter.get('/driver-earnings/:driverId', verifyToken(), SquarePaymentController.getDriverSquareEarnings);
 
 export default squarePaymentRouter;
