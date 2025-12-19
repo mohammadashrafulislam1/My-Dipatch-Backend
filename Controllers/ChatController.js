@@ -35,27 +35,16 @@ export const sendChatMessage = async (req, res) => {
   try {
     const { rideId, senderId, senderRole, recipientId, text } = req.body;
     console.log(req.body)
+    
     // 1. Validate required fields
     if (!rideId || !senderId || !senderRole || !recipientId) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // 2. Validate roles
-    // In sendChatMessage function, update the role validation:
-if (!["driver", "customer", "admin"].includes(senderRole)) {
-  return res.status(400).json({ message: "Invalid sender role" });
-}
-
-// Skip ride participant validation for admin
-if (senderRole !== "admin") {
-  const isValidParticipant = 
-    (senderRole === "driver" && ride.driverId.toString() === senderId) ||
-    (senderRole === "customer" && ride.customerId.toString() === senderId);
-    
-  if (!isValidParticipant) {
-    return res.status(403).json({ message: "Not a ride participant" });
-  }
-}
+    // 2. Validate roles - ADD "admin" to allowed roles
+    if (!["driver", "customer", "admin"].includes(senderRole)) {
+      return res.status(400).json({ message: "Invalid sender role" });
+    }
 
     // 3. Validate ride existence and status
     const ride = await RideModel.findById(rideId);
@@ -63,34 +52,40 @@ if (senderRole !== "admin") {
       return res.status(404).json({ message: "Ride not found" });
     }
     
-    // Check if the ride has passed the point where chatting is sensible
-    // You should allow 'accepted', 'on_the_way', 'in_progress' for chat
-    const disallowedStatuses = ["pending", "completed", "cancelled", "failed"];
-    if (disallowedStatuses.includes(ride.status)) {
-      return res.status(400).json({ message: `Chat is disabled for ride status: ${ride.status}` });
-    }
-    console.log(ride)
-    // 4. Validate presence of participants (Critical Fix)
-    // A ride without both a customer and a driver shouldn't allow chat
-    if (!ride.customerId || !ride.driverId) {
-        return res.status(400).json({ message: "Chat cannot start: Ride is missing a customer or driver ID." });
-    }
-    console.log(senderId, ride.driverId.toString(), ride.customerId.toString())
-    // 5. Validate that sender is a participant (The part that caused the error)
-    const isValidParticipant = 
-      (senderRole === "driver" && ride.driverId.toString() === senderId) ||
-      (senderRole === "customer" && ride.customerId.toString() === senderId);
-      
-    if (!isValidParticipant) {
-      return res.status(403).json({ message: "Not a ride participant" });
-    }
-    
-    // You might also want to validate recipientId matches the *other* participant.
-    let expectedRecipientId = senderRole === "driver" ? ride.customerId.toString() : ride.driverId.toString();
-    if (recipientId !== expectedRecipientId) {
-        return res.status(400).json({ message: "Invalid recipient for this ride." });
+    // For admin, skip the disallowed status check since admin can message anytime
+    if (senderRole !== "admin") {
+      const disallowedStatuses = ["pending", "completed", "cancelled", "failed"];
+      if (disallowedStatuses.includes(ride.status)) {
+        return res.status(400).json({ message: `Chat is disabled for ride status: ${ride.status}` });
+      }
     }
 
+    // 4. Skip participant validation for admin
+    if (senderRole !== "admin") {
+      // Validate that sender is a participant (The part that caused the error)
+      const isValidParticipant = 
+        (senderRole === "driver" && ride.driverId.toString() === senderId) ||
+        (senderRole === "customer" && ride.customerId.toString() === senderId);
+        
+      if (!isValidParticipant) {
+        return res.status(403).json({ message: "Not a ride participant" });
+      }
+      
+      // Validate recipientId matches the *other* participant.
+      let expectedRecipientId = senderRole === "driver" ? ride.customerId.toString() : ride.driverId.toString();
+      if (recipientId !== expectedRecipientId) {
+          return res.status(400).json({ message: "Invalid recipient for this ride." });
+      }
+    } else {
+      // For admin: ensure recipient is either driver or customer of this ride
+      const isValidRecipient = 
+        ride.driverId.toString() === recipientId ||
+        ride.customerId.toString() === recipientId;
+      
+      if (!isValidRecipient) {
+        return res.status(400).json({ message: "Recipient is not part of this ride." });
+      }
+    }
 
     // 6. Create and save the message
     const newMsg = new ChatMessage({
@@ -98,8 +93,7 @@ if (senderRole !== "admin") {
       senderId,
       senderRole,
       recipientId,
-      message: text, // Assuming your ChatMessage model uses 'message' for text
-      // Add other fields like fileUrl, fileType if needed, but for text only, this is fine
+      message: text,
     });
 
     await newMsg.save();
