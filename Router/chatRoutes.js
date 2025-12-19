@@ -6,6 +6,12 @@ import { verifyToken } from "../Middleware/jwt.js";
 export const chatRouter = express.Router();
 chatRouter.get("/customer/:rideId", verifyToken('customer'), getChatHistoryByRide);
 chatRouter.get("/driver/:rideId", verifyToken('driver'), getChatHistoryByRide);
+// Admin chat history
+chatRouter.get(
+  "/admin/:rideId",
+  verifyToken("admin"),
+  getChatHistoryByRide
+);
 chatRouter.post("/upload", upload.single("file"), uploadChatFile);
 
 // Send admin message (to all, customers, drivers, or a specific user)
