@@ -2,6 +2,7 @@ import express from "express";
 import { deleteRideChat, getChatHistoryByRide, getUnreadChatCount, markMessagesAsRead, sendAdminMessage, sendChatMessage, uploadChatFile } from "../Controllers/ChatController.js";
 import { upload } from "../Middleware/upload.js";
 import { verifyToken } from "../Middleware/jwt.js";
+import { ChatMessage } from "../Model/ChatMessage.js";
 
 export const chatRouter = express.Router();
 chatRouter.get("/customer/:rideId", verifyToken('customer'), getChatHistoryByRide);
@@ -33,25 +34,40 @@ chatRouter.get(
   async (req, res) => {
     try {
       const { userId } = req.params;
-      const adminId = req.user._id;
+      const adminId = req.user._id; // Admin ID from token
+      
+      console.log(`Fetching chat between admin ${adminId} and user ${userId}`);
       
       // Fetch all messages between admin and this user
+      // Use $or to get messages in both directions
       const messages = await ChatMessage.find({
         $or: [
-          { senderId: adminId, recipientId: userId },
-          { senderId: userId, recipientId: adminId }
-        ],
-        // Also include messages where admin is sender/recipient with this user
-        $or: [
-          { senderRole: "admin" },
-          { recipientId: userId }
+          // Admin sent to user
+          { senderId: adminId, senderRole: "admin", recipientId: userId },
+          // User sent to admin
+          { senderId: userId, recipientId: adminId },
+          // Also include any messages where admin is recipient and user is sender
+          { senderId: userId, recipientId: adminId, senderRole: { $in: ["driver", "customer"] } }
         ]
-      }).sort({ createdAt: 1 });
+      })
+      .sort({ createdAt: 1 })
+      .lean(); // Use lean() for better performance
       
-      res.status(200).json({ messages });
+      console.log(`Found ${messages.length} messages between admin ${adminId} and user ${userId}`);
+      
+      res.status(200).json({ 
+        success: true, 
+        messages,
+        count: messages.length 
+      });
+      
     } catch (err) {
       console.error("Admin user chat history error:", err);
-      res.status(500).json({ message: "Error retrieving messages" });
+      res.status(500).json({ 
+        success: false, 
+        message: "Error retrieving messages", 
+        error: err.message 
+      });
     }
   }
 );
