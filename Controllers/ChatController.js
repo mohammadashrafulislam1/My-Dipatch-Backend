@@ -41,9 +41,21 @@ export const sendChatMessage = async (req, res) => {
     }
 
     // 2. Validate roles
-    if (!["driver", "customer"].includes(senderRole)) {
-      return res.status(400).json({ message: "Invalid sender role" });
-    }
+    // In sendChatMessage function, update the role validation:
+if (!["driver", "customer", "admin"].includes(senderRole)) {
+  return res.status(400).json({ message: "Invalid sender role" });
+}
+
+// Skip ride participant validation for admin
+if (senderRole !== "admin") {
+  const isValidParticipant = 
+    (senderRole === "driver" && ride.driverId.toString() === senderId) ||
+    (senderRole === "customer" && ride.customerId.toString() === senderId);
+    
+  if (!isValidParticipant) {
+    return res.status(403).json({ message: "Not a ride participant" });
+  }
+}
 
     // 3. Validate ride existence and status
     const ride = await RideModel.findById(rideId);
