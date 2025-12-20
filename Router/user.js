@@ -17,7 +17,7 @@ userRouter.get('/me/customer', verifyToken('customer'), getCurrentUser);
 userRouter.get('/me/driver', verifyToken('driver'), getCurrentUser);
 userRouter.get('/me/admin', verifyToken('admin'), getCurrentUser);
 
-userRouter.get('/', verifyToken('admin'), getUsers)
+userRouter.get('/', verifyToken(), getUsers)
 userRouter.get('/:id',  getUserById)
 userRouter.delete('/:id',  deleteUser)
 // PUT /api/users/:id/status
