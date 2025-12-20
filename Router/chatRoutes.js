@@ -36,7 +36,7 @@ chatRouter.get(
   async (req, res) => {
     try {
       const { userId } = req.params;
-      const adminId = req.user?._id;
+      const adminId = req.user?.id;
 
       console.log("\n===== ADMIN USER CHAT HISTORY =====");
       console.log("Admin ID:", adminId);
