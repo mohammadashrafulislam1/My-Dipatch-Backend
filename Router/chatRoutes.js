@@ -1,11 +1,11 @@
 import express from "express";
 import mongoose from "mongoose";
-const ObjectId = mongoose.Types.ObjectId;
 
 import { deleteRideChat, getChatHistoryByRide, getUnreadChatCount, markMessagesAsRead, sendAdminMessage, sendChatMessage, uploadChatFile } from "../Controllers/ChatController.js";
 import { upload } from "../Middleware/upload.js";
 import { verifyToken } from "../Middleware/jwt.js";
 import { ChatMessage } from "../Model/ChatMessage.js";
+import { RideModel } from "../Model/CustomerModel/Ride.js";
 
 export const chatRouter = express.Router();
 chatRouter.get("/customer/:rideId", verifyToken('customer'), getChatHistoryByRide);
@@ -36,98 +36,112 @@ chatRouter.get(
   async (req, res) => {
     try {
       const { userId } = req.params;
-      const adminId = req.user._id;
-      
-      console.log(`=== CHAT HISTORY REQUEST ===`);
-      console.log(`Admin ID: ${adminId}`);
-      console.log(`User ID: ${userId}`);
-      
-      // Convert string IDs to ObjectIds
-      const adminObjectId = new ObjectId(adminId);
-      const userObjectId = new ObjectId(userId);
-      
-      // Find rides involving this user (as driver or customer)
-      const rides = await RideModel.find({
-        $or: [
-          { driverId: userObjectId },
-          { customerId: userObjectId }
-        ]
-      }).select('_id');
-      
-      const rideIds = rides.map(ride => ride._id);
-      console.log(`Found ${rideIds.length} rides for user ${userId}:`, rideIds);
-      
-      // Query messages:
-      // 1. Direct admin-to-user messages (if you implement separate admin chat)
-      // 2. Messages from rides involving this user where admin participated
-      const messages = await ChatMessage.find({
-        $or: [
-          // Direct admin-user messages
-          {
-            $or: [
-              { senderId: adminObjectId, recipientId: userObjectId },
-              { senderId: userObjectId, recipientId: adminObjectId }
-            ]
-          },
-          // Messages from user's rides where admin was sender
-          {
-            senderId: adminObjectId,
-            rideId: { $in: rideIds }
-          },
-          // Messages from user's rides where user was participant
-          {
-            $and: [
-              { rideId: { $in: rideIds } },
-              {
-                $or: [
-                  { senderId: userObjectId },
-                  { recipientId: userObjectId }
-                ]
-              }
-            ]
-          }
-        ]
-      })
-      .sort({ createdAt: 1 })
-      .lean();
-      
-      console.log(`Found ${messages.length} messages total`);
-      
-      // Debug logging
-      if (messages.length > 0) {
-        console.log("Sample messages:");
-        messages.slice(0, 5).forEach((msg, i) => {
-          console.log(`[${i + 1}]`, {
-            _id: msg._id?.toString(),
-            senderId: msg.senderId?.toString(),
-            recipientId: msg.recipientId?.toString(),
-            rideId: msg.rideId?.toString(),
-            message: msg.message?.substring(0, 50) || '[file/empty]'
-          });
+      const adminId = req.user?._id;
+
+      console.log("\n===== ADMIN USER CHAT HISTORY =====");
+      console.log("Admin ID:", adminId);
+      console.log("User ID:", userId);
+
+      /* --------------------------------------------------
+         1. Validate ObjectIds (PREVENTS 500 ERRORS)
+      -------------------------------------------------- */
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid userId",
         });
       }
-      
-      // Format response
-      const formattedMessages = messages.map(msg => ({
+
+      if (!mongoose.Types.ObjectId.isValid(adminId)) {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid admin token",
+        });
+      }
+
+      const userObjectId = new mongoose.Types.ObjectId(userId);
+      const adminObjectId = new mongoose.Types.ObjectId(adminId);
+
+      /* --------------------------------------------------
+         2. Find ALL rides for this user
+      -------------------------------------------------- */
+      const rides = await RideModel.find({
+        $or: [
+          { customerId: userObjectId },
+          { driverId: userObjectId },
+        ],
+      }).select("_id customerId driverId status");
+
+      const rideIds = rides.map((r) => r._id);
+
+      console.log("Rides found:", rideIds.length);
+
+      if (rideIds.length === 0) {
+        return res.status(200).json({
+          success: true,
+          messages: [],
+          count: 0,
+        });
+      }
+
+      /* --------------------------------------------------
+         3. Fetch ALL messages for those rides
+      -------------------------------------------------- */
+      const messages = await ChatMessage.find({
+        rideId: { $in: rideIds },
+      })
+        .sort({ createdAt: 1 })
+        .lean();
+
+      console.log("Messages found:", messages.length);
+
+      /* --------------------------------------------------
+         4. Filter only RELEVANT messages
+      -------------------------------------------------- */
+      const relevantMessages = messages.filter((msg) => {
+        const senderId = msg.senderId?.toString();
+        const recipientId = msg.recipientId?.toString();
+
+        const adminInvolved =
+          senderId === adminId.toString() ||
+          recipientId === adminId.toString();
+
+        const userInvolved =
+          senderId === userId.toString() ||
+          recipientId === userId.toString();
+
+        return adminInvolved || userInvolved;
+      });
+
+      console.log("Relevant messages:", relevantMessages.length);
+
+      /* --------------------------------------------------
+         5. Normalize ObjectIds for frontend
+      -------------------------------------------------- */
+      const formattedMessages = relevantMessages.map((msg) => ({
         ...msg,
-        _id: msg._id?.toString(),
+        _id: msg._id.toString(),
+        rideId: msg.rideId?.toString(),
         senderId: msg.senderId?.toString(),
         recipientId: msg.recipientId?.toString(),
-        rideId: msg.rideId?.toString()
       }));
-      
-      res.status(200).json({ 
-        success: true, 
+
+      /* --------------------------------------------------
+         6. Send response
+      -------------------------------------------------- */
+      return res.status(200).json({
+        success: true,
         messages: formattedMessages,
-        count: messages.length
+        count: formattedMessages.length,
       });
-      
-    } catch (err) {
-      console.error("Admin user chat history error:", err);
-      res.status(500).json({ 
-        success: false, 
-        message: "Error retrieving messages", 
-        error: err.message 
+
+    } catch (error) {
+      console.error("ADMIN CHAT ERROR ❌", error);
+
+      return res.status(500).json({
+        success: false,
+        message: "Failed to retrieve admin chat history",
+        error: error.message,
       });
     }
   }
