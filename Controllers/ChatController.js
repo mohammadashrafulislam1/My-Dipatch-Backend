@@ -45,7 +45,7 @@ export const sendChatMessage = async (req, res) => {
     }
 
     const ride = await RideModel.findById(rideId);
-    if (!ride) return res.status(404).json({ message: "Ride not found" });
+    if (senderRole !== "admin"){if (!ride) return res.status(404).json({ message: "Ride not found" });}
 
     // Disallow chat for certain ride statuses (only for non-admin)
     if (senderRole !== "admin") {
