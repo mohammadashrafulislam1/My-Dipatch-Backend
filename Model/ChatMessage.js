@@ -7,10 +7,17 @@ const chatMessageSchema = new mongoose.Schema(
       senderId: { type: mongoose.Schema.Types.ObjectId, required: true },
       senderRole: { type: String, enum: ["customer", "driver", "admin"], required: true },
       recipientId: { type: mongoose.Schema.Types.ObjectId, required: true },
+      // 🔥 NEW FIELD (KEY FIX)
+    clientMessageId: {
+      type: String,
+      required: true,
+      index: true,
+    },
       message: { type: String }, // Optional text
       fileUrl: { type: String }, // For image or file
       fileType: { type: String }, // "image", "pdf", "doc", etc.
       read: { type: Boolean, default: false },
+      
     },
     { timestamps: true }
   );

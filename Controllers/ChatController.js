@@ -33,7 +33,8 @@ export const deleteRideChat = async (rideId) => {
 // Send text message
 export const sendChatMessage = async (req, res) => {
   try {
-    const { rideId, senderId, senderRole, recipientId, text } = req.body;
+    const { rideId, senderId, senderRole, recipientId, text, 
+  clientMessageId } = req.body;
 
     if (!senderId || !senderRole || !recipientId || !text) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -97,6 +98,7 @@ export const sendChatMessage = async (req, res) => {
         senderRole,
         recipientId: rId,
         message: text,
+        clientMessageId
       });
 
       await newMsg.save();
