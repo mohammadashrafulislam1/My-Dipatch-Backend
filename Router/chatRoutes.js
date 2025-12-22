@@ -1,7 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 
-import { deleteRideChat, getChatHistoryByRide, getUnreadChatCount, markMessagesAsRead, sendAdminMessage, sendChatMessage, uploadChatFile } from "../Controllers/ChatController.js";
+import { deleteRideChat, getChatHistory, getChatHistoryByRide, getUnreadChatCount, markMessagesAsRead, sendAdminMessage, sendChatMessage, uploadChatFile } from "../Controllers/ChatController.js";
 import { upload } from "../Middleware/upload.js";
 import { verifyToken } from "../Middleware/jwt.js";
 import { ChatMessage } from "../Model/ChatMessage.js";
