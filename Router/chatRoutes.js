@@ -1,21 +1,28 @@
 import express from "express";
 import mongoose from "mongoose";
 
-import { deleteRideChat, getChatHistory, getUnreadChatCount, markMessagesAsRead, sendAdminMessage, sendChatMessage, uploadChatFile } from "../Controllers/ChatController.js";
+import { deleteRideChat, getChatHistoryByRide, getUnreadChatCount, markMessagesAsRead, sendAdminMessage, sendChatMessage, uploadChatFile } from "../Controllers/ChatController.js";
 import { upload } from "../Middleware/upload.js";
 import { verifyToken } from "../Middleware/jwt.js";
 import { ChatMessage } from "../Model/ChatMessage.js";
 import { RideModel } from "../Model/CustomerModel/Ride.js";
 
 export const chatRouter = express.Router();
-chatRouter.get("/customer/:rideId", verifyToken('customer'), getChatHistory);
-chatRouter.get("/driver/:rideId", verifyToken('driver'), getChatHistory);
+chatRouter.get("/customer/:rideId", verifyToken('customer'), getChatHistoryByRide);
+chatRouter.get("/driver/:rideId", verifyToken('driver'), getChatHistoryByRide);
 // Admin chat history
 chatRouter.get(
   "/admin/:rideId",
   verifyToken("admin"),
+  getChatHistoryByRide
+);
+
+chatRouter.get(
+  "/support",
+  verifyToken(),
   getChatHistory
 );
+
 chatRouter.post("/upload", upload.single("file"), uploadChatFile);
 
 // Send admin message (to all, customers, drivers, or a specific user)

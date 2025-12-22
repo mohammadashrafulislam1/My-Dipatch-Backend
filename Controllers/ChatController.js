@@ -267,6 +267,38 @@ export const sendAdminMessage = async (req, res) => {
 };
 
 // Get chat history
+export const getChatHistoryByRide = async (req, res) => {
+  const { rideId } = req.params;
+ const userId = req.user.id;
+const userRole = req.user.role;
+
+  console.log(req.user.id)
+  try {
+    const ride = await RideModel.findById(rideId);
+    if (!ride) return res.status(404).json({ message: "Ride not found" });
+    console.log("UserId from token:", userId);
+    console.log("Ride IDs:", {
+      driverId: ride.driverId.toString(),
+      customerId: ride.customerId.toString(),
+    });
+    
+    // Check if user is driver or customer of this ride
+    const isParticipant =
+      ride.driverId.toString() === userId ||
+      ride.customerId.toString() === userId;
+
+    if (!isParticipant) {
+      return res.status(403).json({ message: "Access to ride chat denied" });
+    }
+
+    const messages = await ChatMessage.find({ rideId }).sort({ createdAt: 1 });
+    res.status(200).json({ messages });
+  } catch (err) {
+    console.error("Chat fetch error:", err);
+    res.status(500).json({ message: "Error retrieving messages" });
+  }
+};
+
 // Get chat history (ride or support)
 export const getChatHistory = async (req, res) => {
   const { rideId } = req.params; // can be "support"
@@ -318,6 +350,7 @@ export const getChatHistory = async (req, res) => {
     res.status(500).json({ message: "Error retrieving messages" });
   }
 };
+
 
 // ChatController.js
 export const getUnreadChatCount = async (req, res) => {
