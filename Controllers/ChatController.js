@@ -267,31 +267,51 @@ export const sendAdminMessage = async (req, res) => {
 };
 
 // Get chat history
-export const getChatHistoryByRide = async (req, res) => {
-  const { rideId } = req.params;
- const userId = req.user.id;
-const userRole = req.user.role;
+// Get chat history (ride or support)
+export const getChatHistory = async (req, res) => {
+  const { rideId } = req.params; // can be "support"
+  const userId = req.user.id;
+  const userRole = req.user.role;
 
-  console.log(req.user.id)
   try {
-    const ride = await RideModel.findById(rideId);
-    if (!ride) return res.status(404).json({ message: "Ride not found" });
-    console.log("UserId from token:", userId);
-    console.log("Ride IDs:", {
-      driverId: ride.driverId.toString(),
-      customerId: ride.customerId.toString(),
-    });
-    
-    // Check if user is driver or customer of this ride
-    const isParticipant =
-      ride.driverId.toString() === userId ||
-      ride.customerId.toString() === userId;
+    // =========================
+    // 🧑‍💼 SUPPORT CHAT (no ride)
+    // =========================
+    if (!rideId || rideId === "support") {
+      // Only admin, customer, driver allowed
+      const messages = await ChatMessage.find({
+        rideId: null,
+        $or: [
+          { senderId: userId },
+          { recipientId: userId }
+        ]
+      }).sort({ createdAt: 1 });
 
-    if (!isParticipant) {
-      return res.status(403).json({ message: "Access to ride chat denied" });
+      return res.status(200).json({ messages });
     }
 
-    const messages = await ChatMessage.find({ rideId }).sort({ createdAt: 1 });
+    // =========================
+    // 🚗 RIDE CHAT
+    // =========================
+    const ride = await RideModel.findById(rideId);
+    if (!ride) {
+      return res.status(404).json({ message: "Ride not found" });
+    }
+
+    // Admin can view any ride chat
+    if (userRole !== "admin") {
+      const isParticipant =
+        ride.driverId.toString() === userId ||
+        ride.customerId.toString() === userId;
+
+      if (!isParticipant) {
+        return res.status(403).json({ message: "Access to ride chat denied" });
+      }
+    }
+
+    const messages = await ChatMessage.find({ rideId })
+      .sort({ createdAt: 1 });
+
     res.status(200).json({ messages });
   } catch (err) {
     console.error("Chat fetch error:", err);
