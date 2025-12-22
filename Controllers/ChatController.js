@@ -33,8 +33,7 @@ export const deleteRideChat = async (rideId) => {
 // Send text message
 export const sendChatMessage = async (req, res) => {
   try {
-    const { rideId, senderId, senderRole, recipientId, text, 
-  clientMessageId } = req.body;
+    const { rideId, senderId, senderRole, recipientId, text, clientMessageId } = req.body;
 
     if (!senderId || !senderRole || !recipientId || !text) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -43,85 +42,99 @@ export const sendChatMessage = async (req, res) => {
     if (!["driver", "customer", "admin"].includes(senderRole)) {
       return res.status(400).json({ message: "Invalid sender role" });
     }
-// const recipientUser = await UserModel.findById(recipientId);
 
-// const recipientIsAdmin = recipientUser.role === "admin";
-    const ride = await RideModel.findById(rideId);
-
-    /* if (senderRole !== "admin" || !recipientIsAdmin){if (!ride) return res.status(404).json({ message: "Ride not found" });}*/
-
-    // Disallow chat for certain ride statuses (only for non-admin)
-    if (senderRole !== "admin") {
-      const disallowedStatuses = ["pending", "completed", "cancelled", "failed"];
-      if (disallowedStatuses.includes(ride.status)) {
-        return res.status(400).json({ message: `Chat is disabled for ride status: ${ride.status}` });
-      }
-    }
-
-    // Allow multiple recipientIds if it's an array (for admin/customer service)
+    // Allow multiple recipients (admin support)
     const recipientIds = Array.isArray(recipientId) ? recipientId : [recipientId];
     const messagesToSend = [];
 
-    for (let rId of recipientIds) {
-      const recipientUser = await UserModel.findById(rId);
-      if (!recipientUser) {
-        return res.status(404).json({ message: `Recipient not found: ${rId}` });
-      }
+    // Load recipients
+    const recipients = await UserModel.find({ _id: { $in: recipientIds } });
+    if (recipients.length !== recipientIds.length) {
+      return res.status(404).json({ message: "One or more recipients not found" });
+    }
 
-      // Validation for non-admin senders (customer or driver)
-      if (senderRole !== "admin") {
+    const hasAdminRecipient = recipients.some(u => u.role === "admin");
+
+    let ride = null;
+
+    // 👉 Only load ride if needed
+    if (!hasAdminRecipient || senderRole === "admin") {
+      if (rideId) {
+        ride = await RideModel.findById(rideId);
+        if (!ride) {
+          return res.status(404).json({ message: "Ride not found" });
+        }
+      }
+    }
+
+    // 🚫 Ride status restriction (ONLY for non-admin → non-admin chat)
+    if (ride && senderRole !== "admin" && !hasAdminRecipient) {
+      const disallowedStatuses = ["pending", "completed", "cancelled", "failed"];
+      if (disallowedStatuses.includes(ride.status)) {
+        return res.status(400).json({
+          message: `Chat is disabled for ride status: ${ride.status}`
+        });
+      }
+    }
+
+    for (const rUser of recipients) {
+      // 🚨 Validation only when chatting with non-admin
+      if (senderRole !== "admin" && rUser.role !== "admin") {
         const isParticipant =
           (senderRole === "driver" && ride.driverId.toString() === senderId) ||
           (senderRole === "customer" && ride.customerId.toString() === senderId);
 
         if (!isParticipant) {
-          return res.status(403).json({ message: "Sender is not a participant of this ride" });
+          return res.status(403).json({
+            message: "Sender is not a participant of this ride"
+          });
         }
 
-        // Recipient must be either the other participant or an admin
-        const expectedRecipientId = senderRole === "driver" ? ride.customerId.toString() : ride.driverId.toString();
-        if (rId !== expectedRecipientId && recipientUser.role !== "admin") {
-          return res.status(400).json({ message: `Invalid recipient for this ride: ${rId}` });
-        }
-      } else {
-        // Admin can message driver, customer, or other admin (optional)
-        const validRecipient =
-          ride.driverId.toString() === rId ||
-          ride.customerId.toString() === rId ||
-          recipientUser.role === "admin";
-        if (!validRecipient) {
-          return res.status(400).json({ message: `Recipient is not part of this ride: ${rId}` });
+        const expectedRecipientId =
+          senderRole === "driver"
+            ? ride.customerId.toString()
+            : ride.driverId.toString();
+
+        if (rUser._id.toString() !== expectedRecipientId) {
+          return res.status(400).json({
+            message: "Invalid recipient for this ride"
+          });
         }
       }
 
-      // Create message object for this recipient
+      // ✅ Create message
       const newMsg = new ChatMessage({
-        rideId,
+        rideId: ride ? ride._id : null,
         senderId,
         senderRole,
-        recipientId: rId,
+        recipientId: rUser._id,
         message: text,
         clientMessageId
       });
 
       await newMsg.save();
 
-      // Emit via Socket.IO
+      // Socket emit
       if (req.io) {
-        req.io.to(rId).emit("chat-message", newMsg);
+        req.io.to(rUser._id.toString()).emit("chat-message", newMsg);
         req.io.to(senderId).emit("chat-message", newMsg);
       }
 
       messagesToSend.push(newMsg);
     }
 
-    res.status(200).json({ message: "Message sent", chat: messagesToSend });
+    res.status(200).json({
+      message: "Message sent",
+      chat: messagesToSend
+    });
   } catch (err) {
     console.error("Send message error:", err);
-    res.status(500).json({ message: "Failed to send message", err: err.message });
+    res.status(500).json({
+      message: "Failed to send message",
+      error: err.message
+    });
   }
 };
-
 
 // Upload chat file
 export const uploadChatFile = async (req, res) => {
