@@ -43,12 +43,12 @@ export const sendChatMessage = async (req, res) => {
     if (!["driver", "customer", "admin"].includes(senderRole)) {
       return res.status(400).json({ message: "Invalid sender role" });
     }
-const recipientUser = await UserModel.findById(recipientId);
+// const recipientUser = await UserModel.findById(recipientId);
 
-const recipientIsAdmin = recipientUser.role === "admin";
+// const recipientIsAdmin = recipientUser.role === "admin";
     const ride = await RideModel.findById(rideId);
 
-    if (senderRole !== "admin" || !recipientIsAdmin){if (!ride) return res.status(404).json({ message: "Ride not found" });}
+    /* if (senderRole !== "admin" || !recipientIsAdmin){if (!ride) return res.status(404).json({ message: "Ride not found" });}*/
 
     // Disallow chat for certain ride statuses (only for non-admin)
     if (senderRole !== "admin") {
