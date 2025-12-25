@@ -444,12 +444,10 @@ export const sendSupportMessage = async (req, res) => {
   }
 };
 
-/**
- * Admin replies to user support chat
- */
 export const sendAdminSupportReply = async (req, res) => {
   try {
-    const { text, recipientId } = req.body;
+    const { text, recipientId, 
+  clientMessageId, } = req.body;
     const senderId = req.user.id;
     const senderRole = req.user.role;
 
@@ -472,6 +470,7 @@ export const sendAdminSupportReply = async (req, res) => {
       senderRole: "admin",
       recipientId,
       message: text,
+  clientMessageId,
     });
 
     await msg.save();
