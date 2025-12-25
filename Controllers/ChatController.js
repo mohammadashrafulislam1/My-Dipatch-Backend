@@ -504,11 +504,21 @@ export const uploadSupportFile = async (req, res) => {
   return res.status(403).json({ message: "Only customers, drivers, or admins can send support files" });
 }
     // Validate admin recipient
-    const adminIds = Array.isArray(recipientId) ? recipientId : [recipientId];
-    const admins = await UserModel.find({ _id: { $in: adminIds }, role: "admin" });
-    if (admins.length === 0) {
-      return res.status(404).json({ message: "Admin not found" });
-    }
+    // Validate recipient based on sender role
+let recipients = [];
+
+if (senderRole === "admin") {
+  // Admin can send to anyone, no need to filter by role
+  recipients = Array.isArray(recipientId) ? recipientId : [recipientId];
+} else {
+  // Customer/driver can only send to admins
+  const adminIds = Array.isArray(recipientId) ? recipientId : [recipientId];
+  const admins = await UserModel.find({ _id: { $in: adminIds }, role: "admin" });
+  if (admins.length === 0) {
+    return res.status(404).json({ message: "Admin not found" });
+  }
+  recipients = admins.map(a => a._id);
+}
 
     // Upload file to Cloudinary
     const { url, public_id } = await uploadImageToCloudinary(file.path);
@@ -516,26 +526,27 @@ export const uploadSupportFile = async (req, res) => {
 
     const messages = [];
 
-    for (const admin of admins) {
-      const newMsg = new ChatMessage({
-        rideId: null,               // SUPPORT CHAT
-        senderId,
-        senderRole,
-        recipientId: admin._id,
-        fileUrl: url,
-        fileType,
-      });
+    for (const recipient of recipients) {
+  const newMsg = new ChatMessage({
+    rideId: null,               
+    senderId,
+    senderRole,
+    recipientId: recipient,
+    fileUrl: url,
+    fileType,
+  });
 
-      await newMsg.save();
+  await newMsg.save();
 
-      // Emit via Socket.IO
-      if (req.io) {
-        req.io.to(admin._id.toString()).emit("support-message", newMsg);
-        req.io.to(senderId).emit("support-message", newMsg);
-      }
+  // Emit via Socket.IO
+  if (req.io) {
+    req.io.to(recipient.toString()).emit("support-message", newMsg);
+    req.io.to(senderId).emit("support-message", newMsg);
+  }
 
-      messages.push(newMsg);
-    }
+  messages.push(newMsg);
+}
+
 
     res.status(200).json({ message: "Support file uploaded", chat: messages });
   } catch (err) {
