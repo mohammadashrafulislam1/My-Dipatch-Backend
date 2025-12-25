@@ -137,6 +137,39 @@ export const initSocket = (server) => {
         console.error("Socket chat-message error:", err);
       }
     });
+socket.on("support-message", async ({ senderId, senderRole, recipientId, message, fileUrl }) => {
+  try {
+    if (!senderId || !recipientId || !message) return;
+
+    const newMsg = new ChatMessage({
+      rideId: null,               // 🔑 SUPPORT CHAT
+      senderId,
+      senderRole,
+      recipientId,
+      message,
+      fileUrl: fileUrl || null,
+    });
+
+    await newMsg.save();
+
+    // Emit to admin + sender
+    io.to(recipientId).emit("support-message", newMsg);
+    io.to(senderId).emit("support-message", newMsg);
+
+    // 🔔 Optional notification
+    await saveNotification(
+      recipientId,
+      "admin",
+      "💬 New Support Message",
+      message.slice(0, 50),
+      "support_chat",
+      null,
+      { senderId }
+    );
+  } catch (err) {
+    console.error("Support socket error:", err);
+  }
+});
 
     // Handle join event from customer/driver/admin
     socket.on("join", async ({ userId, role }) => {
