@@ -155,6 +155,6 @@ chatRouter.get(
 );
 
 // support chat:
-chatRouter.post("/send", verifyToken(), sendSupportMessage);
+chatRouter.post("/support/send", verifyToken(), sendSupportMessage);
 chatRouter.post("/admin-reply", verifyToken(), sendAdminSupportReply);
 chatRouter.get("/history", verifyToken(), getSupportChatHistory);
