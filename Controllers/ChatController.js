@@ -492,7 +492,7 @@ export const uploadSupportFile = async (req, res) => {
   try {
     const { senderId, senderRole, recipientId } = req.body;
     const file = req.file;
-
+     console.log(req.body,  req.file)
     // Validate required fields
     if (!senderId || !senderRole || !recipientId) {
       return res.status(400).json({ message: "Missing required fields" });
