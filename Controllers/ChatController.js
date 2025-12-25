@@ -490,7 +490,7 @@ export const sendAdminSupportReply = async (req, res) => {
 // Upload support chat file
 export const uploadSupportFile = async (req, res) => {
   try {
-    const { senderId, senderRole, recipientId } = req.body;
+    const { senderId, senderRole, recipientId, clientMessageId } = req.body;
     const file = req.file;
      console.log(req.body,  req.file)
     // Validate required fields
@@ -534,6 +534,7 @@ if (senderRole === "admin") {
     recipientId: recipient,
     fileUrl: url,
     fileType,
+    clientMessageId
   });
 
   await newMsg.save();
