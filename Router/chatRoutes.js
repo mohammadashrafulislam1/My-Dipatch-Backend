@@ -1,7 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 
-import { deleteRideChat, getChatHistory, getChatHistoryByRide, getUnreadChatCount, markMessagesAsRead, sendAdminMessage, sendChatMessage, uploadChatFile } from "../Controllers/ChatController.js";
+import { deleteRideChat, getChatHistory, getChatHistoryByRide, getSupportChatHistory, getUnreadChatCount, markMessagesAsRead, sendAdminMessage, sendAdminSupportReply, sendChatMessage, sendSupportMessage, uploadChatFile } from "../Controllers/ChatController.js";
 import { upload } from "../Middleware/upload.js";
 import { verifyToken } from "../Middleware/jwt.js";
 import { ChatMessage } from "../Model/ChatMessage.js";
@@ -153,3 +153,8 @@ chatRouter.get(
     }
   }
 );
+
+// support chat:
+chatRouter.post("/send", verifyToken(), sendSupportMessage);
+chatRouter.post("/admin-reply", verifyToken(), sendAdminSupportReply);
+chatRouter.get("/history", verifyToken(), getSupportChatHistory);

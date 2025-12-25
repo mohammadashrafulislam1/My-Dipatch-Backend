@@ -383,3 +383,126 @@ export const markMessagesAsRead = async (req, res) => {
     res.status(500).json({ message: "Error marking messages read" });
   }
 };
+
+// ----- support history
+
+export const sendSupportMessage = async (req, res) => {
+  try {
+    const { text, recipientId, clientMessageId } = req.body;
+    const senderId = req.user.id;
+    const senderRole = req.user.role;
+
+    if (!text || !recipientId) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    if (!["customer", "driver"].includes(senderRole)) {
+      return res.status(403).json({ message: "Only customers or drivers can use support chat" });
+    }
+
+    // Validate admin recipient(s)
+    const adminIds = Array.isArray(recipientId) ? recipientId : [recipientId];
+    const admins = await UserModel.find({
+      _id: { $in: adminIds },
+      role: "admin",
+    });
+
+    if (admins.length === 0) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    const messages = [];
+
+    for (const admin of admins) {
+      const msg = new ChatMessage({
+        rideId: null,               // 🔑 SUPPORT CHAT = no ride
+        senderId,
+        senderRole,
+        recipientId: admin._id,
+        message: text,
+        clientMessageId,
+      });
+
+      await msg.save();
+
+      // Emit socket
+      if (req.io) {
+        req.io.to(admin._id.toString()).emit("support-message", msg);
+        req.io.to(senderId).emit("support-message", msg);
+      }
+
+      messages.push(msg);
+    }
+
+    res.status(200).json({
+      message: "Support message sent",
+      chat: messages,
+    });
+  } catch (err) {
+    console.error("Support send error:", err);
+    res.status(500).json({ message: "Failed to send support message" });
+  }
+};
+
+/**
+ * Admin replies to user support chat
+ */
+export const sendAdminSupportReply = async (req, res) => {
+  try {
+    const { text, recipientId } = req.body;
+    const senderId = req.user.id;
+    const senderRole = req.user.role;
+
+    if (senderRole !== "admin") {
+      return res.status(403).json({ message: "Admin access only" });
+    }
+
+    if (!text || !recipientId) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const user = await UserModel.findById(recipientId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const msg = new ChatMessage({
+      rideId: null,
+      senderId,
+      senderRole: "admin",
+      recipientId,
+      message: text,
+    });
+
+    await msg.save();
+
+    if (req.io) {
+      req.io.to(recipientId.toString()).emit("support-message", msg);
+      req.io.to(senderId).emit("support-message", msg);
+    }
+
+    res.status(200).json({ message: "Reply sent", chat: msg });
+  } catch (err) {
+    console.error("Admin support reply error:", err);
+    res.status(500).json({ message: "Failed to reply" });
+  }
+};
+
+/**
+ * Get support chat history
+ */
+export const getSupportChatHistory = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const messages = await ChatMessage.find({
+      rideId: null,
+      $or: [{ senderId: userId }, { recipientId: userId }],
+    }).sort({ createdAt: 1 });
+
+    res.status(200).json({ messages });
+  } catch (err) {
+    console.error("Support chat fetch error:", err);
+    res.status(500).json({ message: "Failed to load support chat" });
+  }
+};
