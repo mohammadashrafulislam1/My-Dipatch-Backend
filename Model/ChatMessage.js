@@ -10,7 +10,6 @@ const chatMessageSchema = new mongoose.Schema(
       // 🔥 NEW FIELD (KEY FIX)
     clientMessageId: {
       type: String,
-      required: true,
       index: true,
     },
       message: { type: String }, // Optional text
