@@ -487,9 +487,63 @@ export const sendAdminSupportReply = async (req, res) => {
   }
 };
 
-/**
- * Get support chat history
- */
+// Upload support chat file
+export const uploadSupportFile = async (req, res) => {
+  try {
+    const { senderId, senderRole, recipientId } = req.body;
+    const file = req.file;
+
+    // Validate required fields
+    if (!senderId || !senderRole || !recipientId) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    if (!file) return res.status(400).json({ message: "No file uploaded" });
+
+    if (!["customer", "driver", "admin"].includes(senderRole)) {
+  return res.status(403).json({ message: "Only customers, drivers, or admins can send support files" });
+}
+    // Validate admin recipient
+    const adminIds = Array.isArray(recipientId) ? recipientId : [recipientId];
+    const admins = await UserModel.find({ _id: { $in: adminIds }, role: "admin" });
+    if (admins.length === 0) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    // Upload file to Cloudinary
+    const { url, public_id } = await uploadImageToCloudinary(file.path);
+    const fileType = file.mimetype.startsWith("image") ? "image" : "file";
+
+    const messages = [];
+
+    for (const admin of admins) {
+      const newMsg = new ChatMessage({
+        rideId: null,               // SUPPORT CHAT
+        senderId,
+        senderRole,
+        recipientId: admin._id,
+        fileUrl: url,
+        fileType,
+      });
+
+      await newMsg.save();
+
+      // Emit via Socket.IO
+      if (req.io) {
+        req.io.to(admin._id.toString()).emit("support-message", newMsg);
+        req.io.to(senderId).emit("support-message", newMsg);
+      }
+
+      messages.push(newMsg);
+    }
+
+    res.status(200).json({ message: "Support file uploaded", chat: messages });
+  } catch (err) {
+    console.error("Support file upload error:", err);
+    res.status(500).json({ message: "Failed to upload support file" });
+  }
+};
+
 export const getSupportChatHistory = async (req, res) => {
   try {
     const userId = req.user.id;
