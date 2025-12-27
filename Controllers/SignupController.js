@@ -382,6 +382,40 @@ export const updateUserProfile = async (req, res) => {
   }
 };
 
+export const updateUserRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    // ✅ Only allowed roles
+    if (!["admin", "moderator"].includes(role)) {
+      return res.status(400).json({ message: "Invalid role" });
+    }
+
+    // ❌ Prevent self-demotion
+    if (req.user.id === id) {
+      return res.status(400).json({ message: "You cannot change your own role" });
+    }
+
+    const user = await UserModel.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.role = role;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `User role updated to ${role}`,
+      user,
+    });
+
+  } catch (error) {
+    console.error("Update role error:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 // Delete user with id:
 export const deleteUser = async (req, res) =>{

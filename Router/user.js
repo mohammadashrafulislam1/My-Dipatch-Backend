@@ -1,6 +1,6 @@
 import { ActiveUserStatus, CreateSignupController, deleteUser, getCurrentUser, 
     getUserById, 
-    getUsers, login, logout, updateUserProfile, updateUserStatus } from "../Controllers/SignupController.js";
+    getUsers, login, logout, updateUserProfile, updateUserRole, updateUserStatus } from "../Controllers/SignupController.js";
 import { verifyToken } from "../Middleware/jwt.js";
 import { upload } from "../Middleware/upload.js";
 import express from "express";
@@ -12,6 +12,11 @@ userRouter.post('/login', login)
 userRouter.post('/logout', logout)
 userRouter.put("/update/driver", verifyToken("driver"), upload.single("profileImage"), updateUserProfile); 
 userRouter.put("/update/customer", verifyToken("customer"), upload.single("profileImage"), updateUserProfile); 
+userRouter.put( 
+  "/users/update-role/:id",
+  verifyToken('admin'),
+  updateUserRole
+);
 // Get current user route (protected)
 userRouter.get('/me/customer', verifyToken('customer'), getCurrentUser);
 userRouter.get('/me/driver', verifyToken('driver'), getCurrentUser);
