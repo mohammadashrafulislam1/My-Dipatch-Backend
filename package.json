@@ -25,6 +25,7 @@
     "mongodb": "^6.17.0",
     "mongoose": "^8.16.3",
     "multer": "^2.0.1",
+    "nodemailer": "^7.0.12",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "square": "^43.2.1",
