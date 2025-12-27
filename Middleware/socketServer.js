@@ -129,7 +129,16 @@ export const initSocket = (server) => {
         await newMsg.save();
 
         io.to(recipientId).emit("chat-message", newMsg);
-
+// 🔔 Notify recipient (NOT sender)
+    await saveNotification(
+      recipientId,
+      senderRole === "admin" ? "customer" : "admin",
+      "💬 New Message",
+      message?.slice(0, 60) || "Sent you a file",
+      "chat",
+      rideId,
+      { senderId, senderRole }
+    );
         if (senderRole === "admin") {
           console.log("Admin sent:", message || fileUrl);
         }
