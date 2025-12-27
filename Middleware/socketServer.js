@@ -4,6 +4,8 @@ import { ChatMessage } from "../Model/ChatMessage.js";
 import { RideModel } from "../Model/CustomerModel/Ride.js";
 import { startPendingRideNotifier } from "./startPendingRideNotifier.js";
 import { Notification } from "../Model/Notification.js";
+import { sendEmail } from "../utils/sendEmail.js";
+import { chatEmailTemplate } from "../utils/emailTemplates.js";
 
 let io;
 
@@ -127,6 +129,18 @@ export const initSocket = (server) => {
         });
     
         await newMsg.save();
+        // 📧 EMAIL IF RECIPIENT IS OFFLINE
+if (!onlineUsers[recipientId]) {
+  await sendEmail({
+    to: "technicalashraf4@gmail.com", // replace with real admin email
+    subject: "New Chat Message",
+    html: chatEmailTemplate({
+      senderRole,
+      message: message || "Sent a file",
+    }),
+  });
+}
+
 
         io.to(recipientId).emit("chat-message", newMsg);
 // 🔔 Notify recipient (NOT sender)
@@ -160,6 +174,17 @@ socket.on("support-message", async ({ senderId, senderRole, recipientId, message
     });
 
     await newMsg.save();
+// 📧 Email admin if offline
+if (!onlineUsers[recipientId]) {
+  await sendEmail({
+    to: "technicalashraf4@gmail.com",
+    subject: "New Support Message",
+    html: chatEmailTemplate({
+      senderRole,
+      message,
+    }),
+  });
+}
 
     // Emit to admin + sender
     io.to(recipientId).emit("support-message", newMsg);
