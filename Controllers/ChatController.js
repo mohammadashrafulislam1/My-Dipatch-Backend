@@ -4,9 +4,6 @@ import { cloudinary } from "../utils/cloudinary.js";
 import { ChatMessage } from "../Model/ChatMessage.js";
 import { UserModel } from "../Model/User.js";
 import { RideModel } from "../Model/CustomerModel/Ride.js";
-import { sendEmail } from "../utils/sendEmail.js";
-import { chatEmailTemplate } from "../utils/emailTemplates.js";
-import { onlineUsers } from "../Middleware/socketServer.js";
 
 // Cloudinary uploader
 const uploadImageToCloudinary = async (filePath) => {
@@ -116,17 +113,6 @@ export const sendChatMessage = async (req, res) => {
       });
 
       await newMsg.save();
-// 📧 EMAIL RECIPIENT IF OFFLINE
-if (!onlineUsers[rUser._id.toString()]) {
-  await sendEmail({
-    to: rUser.email,
-    subject: "New Chat Message",
-    html: chatEmailTemplate({
-      senderRole,
-      message: text,
-    }),
-  });
-}
 
       // Socket emit
       if (req.io) {
@@ -438,17 +424,6 @@ export const sendSupportMessage = async (req, res) => {
       });
 
       await msg.save();
-// 📧 EMAIL ADMIN IF OFFLINE
-if (!onlineUsers[admin._id.toString()]) {
-  await sendEmail({
-    to: admin.email,
-    subject: "New Support Message",
-    html: chatEmailTemplate({
-      senderRole,
-      message: text,
-    }),
-  });
-}
 
       // Emit socket
       if (req.io) {
@@ -499,16 +474,7 @@ export const sendAdminSupportReply = async (req, res) => {
     });
 
     await msg.save();
-if (!onlineUsers[recipientId]) {
-  await sendEmail({
-    to: user.email,
-    subject: "Admin replied to you",
-    html: chatEmailTemplate({
-      senderRole: "Admin",
-      message: message.text,
-    }),
-  });
-}
+
     if (req.io) {
       req.io.to(recipientId.toString()).emit("support-message", msg);
       req.io.to(senderId).emit("support-message", msg);
