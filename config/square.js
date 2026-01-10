@@ -1,12 +1,9 @@
-import pkg from 'square';   // import the whole CommonJS package
-const { Client, Environment } = pkg;  // destructure what you need
+import pkg from 'square'; // import the CommonJS package
+const { Client } = pkg;  // no Environment object
 
 const squareClient = new Client({
-  environment:
-    process.env.NODE_ENV === 'production'
-      ? Environment.Production
-      : Environment.Sandbox,
-  accessToken: process.env.SQUARE_ACCESS_TOKEN
+  environment: process.env.NODE_ENV === 'production' ? 'Production' : 'Sandbox',
+  accessToken: process.env.SQUARE_ACCESS_TOKEN,
 });
 
 export const paymentsApi = squareClient.paymentsApi;
