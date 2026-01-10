@@ -1,14 +1,15 @@
 // src/config/square.ts
+import 'dotenv/config'; 
 import { SquareClient, SquareEnvironment } from 'square';
-import 'dotenv/config'; // Ensure this is at the very top
 
 const token = process.env.SQUARE_ACCESS_TOKEN;
 
-// Log the first few characters to verify it's the right type of token
-if (token) {
-  console.log(`Square Token Type: ${token.startsWith('sandbox') ? 'SANDBOX' : 'PRODUCTION'}`);
+// This will help you see EXACTLY what is being sent to Square (safe logging)
+if (!token) {
+  console.error("❌ SQUARE_ACCESS_TOKEN is UNDEFINED. Check your Render Environment Variables.");
 } else {
-  console.error("FATAL: SQUARE_ACCESS_TOKEN is missing from environment variables!");
+  console.log(`✅ Square Token detected. Starts with: ${token.substring(0, 12)}...`);
+  console.log(`✅ Environment set to: SANDBOX`);
 }
 
 const squareClient = new SquareClient({
