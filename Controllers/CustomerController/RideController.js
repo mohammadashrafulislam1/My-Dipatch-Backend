@@ -8,7 +8,6 @@ import { createTransaction } from "../AdminController/WalletController.js";
 import { PricingModel } from "../../Model/AdminModel/Pricing.js";
 
 // Create a new ride request
-// Create a new ride request
 export const requestRide = async (req, res) => {
   try {
     const {
@@ -251,10 +250,15 @@ export const getRideById = async (req, res) => {
       return res.status(400).json({ message: "Missing rideId parameter." });
     }
 
-    const ride = await RideModel.findById(rideId);
+    const ride = await RideModel.findOne({
+      _id: rideId,
+      isPaid: true,          // ✅ only paid rides
+    });
 
     if (!ride) {
-      return res.status(404).json({ message: "Ride not found." });
+      return res.status(404).json({ 
+        message: "Ride not found or payment not completed yet." 
+      });
     }
 
     res.status(200).json({
@@ -270,14 +274,15 @@ export const getRideById = async (req, res) => {
 // Get all rides
 export const getAllRides = async (req, res) => {
   try {
-    const rides = await RideModel.find().sort({ createdAt: -1 }); // newest first
+    const rides = await RideModel.find({ isPaid: true })   // ✅ filter here
+      .sort({ createdAt: -1 });
 
     if (!rides || rides.length === 0) {
-      return res.status(404).json({ message: "No rides found." });
+      return res.status(404).json({ message: "No paid rides found." });
     }
 
     res.status(200).json({
-      message: "Rides retrieved successfully.",
+      message: "Paid rides retrieved successfully.",
       rides,
     });
   } catch (err) {
@@ -289,30 +294,36 @@ export const getAllRides = async (req, res) => {
 // ⭐ NEW: Calculate fare without creating ride
 export const calculateFare = async (req, res) => {
   try {
-    const { pickup, dropoff, midwayStops } = req.body;
+   const { pickup, dropoff, midwayStops } = req.body;
 
-    if (!pickup || !dropoff) {
-      return res.status(400).json({ message: "Missing pickup/dropoff" });
-    }
+// Validate coordinates
+if (!pickup?.lat || !pickup?.lng || !dropoff?.lat || !dropoff?.lng) {
+  return res.status(400).json({ message: "Invalid pickup or dropoff coordinates" });
+}
 
-    const waypoints =
-      midwayStops?.map((stop) => `${stop.lat},${stop.lng}`).join("|") || "";
+// Only include valid midway stops
+const validStops = midwayStops?.filter(stop => stop.lat && stop.lng) || [];
 
-    // Google API call
-    const googleRes = await axios.get(
-      "https://maps.googleapis.com/maps/api/directions/json",
-      {
-        params: {
-          origin: `${pickup.lat},${pickup.lng}`,
-          destination: `${dropoff.lat},${dropoff.lng}`,
-          waypoints,
-          key: process.env.GOOGLE_MAPS_API_KEY,
-        },
-      }
-    );
+// Google expects waypoints param only if there are valid stops
+const params = {
+  origin: `${pickup.lat},${pickup.lng}`,
+  destination: `${dropoff.lat},${dropoff.lng}`,
+  key: process.env.GOOGLE_MAPS_API_KEY,
+};
 
-    if (googleRes.data.status !== "OK")
-      return res.status(400).json({ message: "Google map error" });
+if (validStops.length) {
+  params.waypoints = validStops.map(stop => `${stop.lat},${stop.lng}`).join("|");
+}
+
+const googleRes = await axios.get(
+  "https://maps.googleapis.com/maps/api/directions/json",
+  { params }
+);
+
+if (googleRes.data.status !== "OK") {
+  console.error("Google Directions API status:", googleRes.data.status, googleRes.data.error_message);
+  return res.status(400).json({ message: "Google map error" });
+}
 
     const route = googleRes.data.routes[0];
 

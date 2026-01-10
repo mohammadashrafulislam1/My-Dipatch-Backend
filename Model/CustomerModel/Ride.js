@@ -42,6 +42,15 @@ const rideSchema = new mongoose.Schema({
     type: [locationSchema],
     default: []
   },
+  isPaid: {
+  type: Boolean,
+  default: false
+},
+paymentStatus: {
+  type: String,
+  enum: ["pending", "paid", "failed", "refunded"],
+  default: "pending"
+},
   instructions: {
     type: String,
     default: ""

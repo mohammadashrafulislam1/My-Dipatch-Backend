@@ -2,6 +2,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { paymentsApi, refundsApi } from '../config/square.js';
 import { SquarePaymentModel } from '../Model/SquarePayment.js';
+import { RideModel } from '../Model/CustomerModel/Ride.js';
 
 export class SquarePaymentService {
   static async processRidePayment({
@@ -69,7 +70,17 @@ export class SquarePaymentService {
       paymentRecord.processedAt = new Date();
       
       await paymentRecord.save();
-
+// ✅ UPDATE RIDE PAYMENT STATUS
+if (payment.status === "COMPLETED") {
+  await RideModel.findByIdAndUpdate(rideId, {
+    isPaid: true,
+    paymentStatus: "paid"
+  });
+} else {
+  await RideModel.findByIdAndUpdate(rideId, {
+    paymentStatus: "failed"
+  });
+}
       return {
         success: payment.status === 'COMPLETED',
         paymentId: payment.id,

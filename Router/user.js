@@ -13,7 +13,7 @@ userRouter.post('/logout', logout)
 userRouter.put("/update/driver", verifyToken("driver"), upload.single("profileImage"), updateUserProfile); 
 userRouter.put("/update/customer", verifyToken("customer"), upload.single("profileImage"), updateUserProfile); 
 userRouter.put( 
-  "/users/update-role/:id",
+  "/update-role/:id",
   verifyToken('admin'),
   updateUserRole
 );
