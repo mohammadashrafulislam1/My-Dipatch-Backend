@@ -2,7 +2,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { SquarePaymentModel } from '../Model/SquarePayment.js';
 import { RideModel } from '../Model/CustomerModel/Ride.js';
-import squareClient, { paymentsApi, refundsApi } from '../config/square.js'; // import APIs from config
+import { paymentsApi, refundsApi } from '../config/square.js';
 
 export class SquarePaymentService {
   static async processRidePayment({
@@ -15,23 +15,31 @@ export class SquarePaymentService {
     adminAmount,
   }) {
     try {
-      const totalCents = Math.round(totalAmount * 100);
-      const adminCents = Math.round(adminAmount * 100);
+      const totalCents = Math.round(Number(totalAmount) * 100);
+      const adminCents = Math.round(Number(adminAmount) * 100);
+
       const idempotencyKey = `ride-${rideId}-${uuidv4().slice(0, 8)}`;
 
       const paymentRequest = {
         sourceId,
         idempotencyKey,
-        amountMoney: { amount: totalCents, currency: 'CAD' },
-        appFeeMoney: { amount: adminCents, currency: 'CAD' },
+
+        // 🔴 MUST be BigInt in Square v43+
+        amountMoney: { amount: BigInt(totalCents), currency: 'CAD' },
+        appFeeMoney: { amount: BigInt(adminCents), currency: 'CAD' },
+
         locationId: process.env.SQUARE_LOCATION_ID,
         referenceId: `ride-${rideId}`,
         note: `Ride #${rideId} | Customer: ${customerId}`,
         autocomplete: true,
-        metadata: { rideId, customerId, driverId: driverId || 'unassigned', type: 'ride_fare' },
+        metadata: {
+          rideId,
+          customerId,
+          driverId: driverId || 'unassigned',
+          type: 'ride_fare'
+        },
       };
 
-      // ✅ Correct: use paymentsApi from v43+ client
       const { result } = await paymentsApi.create(paymentRequest);
       const payment = result.payment;
 
@@ -63,27 +71,33 @@ export class SquarePaymentService {
         paymentId: payment.id,
         status: payment.status,
         paymentRecordId: paymentRecord._id,
-        amount: payment.amountMoney.amount / 100,
+
+        // Square returns BigInt → convert back for frontend
+        amount: Number(payment.amountMoney.amount) / 100,
         currency: payment.amountMoney.currency,
         receiptUrl: payment.receiptUrl,
       };
+
     } catch (error) {
       console.error('Square payment error:', error);
-      throw new Error(`Payment failed: ${error.errors?.[0]?.detail || error.message}`);
+      throw new Error(
+        `Payment failed: ${error.errors?.[0]?.message || error.message}`
+      );
     }
   }
 
   static async refundPayment(paymentId, rideId, amount, reason = 'Ride cancelled') {
     try {
+      const cents = Math.round(Number(amount) * 100);
+
       const refundRequest = {
         paymentId,
         idempotencyKey: `refund-${rideId}-${Date.now()}`,
-        amountMoney: { amount: Math.round(amount * 100), currency: 'CAD' },
+        amountMoney: { amount: BigInt(cents), currency: 'CAD' }, // 🔴 BigInt here too
         reason,
         metadata: { rideId, type: 'ride_refund' },
       };
 
-      // ✅ Correct: use refundsApi from v43+ client
       const { result } = await refundsApi.refund(refundRequest);
       const refund = result.refund;
 
@@ -98,8 +112,9 @@ export class SquarePaymentService {
         success: true,
         refundId: refund.id,
         status: refund.status,
-        amount: refund.amountMoney.amount / 100,
+        amount: Number(refund.amountMoney.amount) / 100,
       };
+
     } catch (error) {
       console.error('Square refund error:', error);
       throw error;
