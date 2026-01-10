@@ -22,18 +22,25 @@ export class SquarePaymentService {
       const idempotencyKey = `ride-${rideId}-${uuidv4().slice(0, 8)}`;
 
       // Create payment record first
-      const paymentRecord = new SquarePaymentModel({
-        rideId,
-        customerId,
-        driverId,
-        totalAmount,
-        driverAmount,
-        adminAmount,
-        currency: 'CAD',
-        paymentStatus: 'processing'
-      });
+      // Remove the first save
+const paymentRecord = new SquarePaymentModel({
+  rideId,
+  customerId,
+  driverId,
+  totalAmount,
+  driverAmount,
+  adminAmount,
+  currency: 'CAD',
+  paymentStatus: 'processing',
+  squarePaymentId: payment.id,   // set here after payment
+  cardLast4: payment.cardDetails?.last4,
+  cardBrand: payment.cardDetails?.cardBrand,
+  receiptUrl: payment.receiptUrl,
+  processedAt: new Date()
+});
 
-      await paymentRecord.save();
+await paymentRecord.save();
+
 
       // Process payment through Square
       const paymentRequest = {

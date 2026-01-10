@@ -22,7 +22,6 @@ const squarePaymentSchema = new mongoose.Schema({
   // Square Payment Details
   squarePaymentId: {
     type: String,
-    required: true,
     unique: true
   },
   squareOrderId: String,
