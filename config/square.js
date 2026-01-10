@@ -1,9 +1,9 @@
 // src/config/square.js
-import { Client, Environment } from 'square';
+import pkg from 'square';
+const { Client, Environment } = pkg;
 
 // Create the client
 const squareClient = new Client({
-  // Using the Environment enum is safer and cleaner
   environment: process.env.NODE_ENV === 'production' ? Environment.Production : Environment.Sandbox,
   accessToken: process.env.SQUARE_ACCESS_TOKEN,
 });
