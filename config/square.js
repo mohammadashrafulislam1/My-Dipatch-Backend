@@ -1,9 +1,11 @@
-import { Client, Environment } from 'square';
+import pkg from 'square';   // import the whole CommonJS package
+const { Client, Environment } = pkg;  // destructure what you need
 
 const squareClient = new Client({
-  environment: process.env.NODE_ENV === 'production' 
-    ? Environment.Production 
-    : Environment.Sandbox,
+  environment:
+    process.env.NODE_ENV === 'production'
+      ? Environment.Production
+      : Environment.Sandbox,
   accessToken: process.env.SQUARE_ACCESS_TOKEN
 });
 
