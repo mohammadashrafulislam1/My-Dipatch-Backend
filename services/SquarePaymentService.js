@@ -32,7 +32,7 @@ export class SquarePaymentService {
       };
 
       // ✅ Correct: use paymentsApi from v43+ client
-      const { result } = await paymentsApi.createPayment(paymentRequest);
+      const { result } = await paymentsApi.create(paymentRequest);
       const payment = result.payment;
 
       const paymentRecord = new SquarePaymentModel({
@@ -84,7 +84,7 @@ export class SquarePaymentService {
       };
 
       // ✅ Correct: use refundsApi from v43+ client
-      const { result } = await refundsApi.refundPayment(refundRequest);
+      const { result } = await refundsApi.refund(refundRequest);
       const refund = result.refund;
 
       const paymentRecord = await SquarePaymentModel.findOne({ squarePaymentId: paymentId });
