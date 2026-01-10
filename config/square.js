@@ -1,11 +1,13 @@
-import pkg from 'square'; // import the CommonJS package
-const { Client } = pkg;  // no Environment object
+// src/config/square.js
+import Square from 'square'; // default import of the SDK
 
-const squareClient = new Client({
+// Create the client
+const squareClient = new Square.Client({
   environment: process.env.NODE_ENV === 'production' ? 'Production' : 'Sandbox',
   accessToken: process.env.SQUARE_ACCESS_TOKEN,
 });
 
+// Export the APIs
 export const paymentsApi = squareClient.paymentsApi;
 export const refundsApi = squareClient.refundsApi;
 export const locationsApi = squareClient.locationsApi;
