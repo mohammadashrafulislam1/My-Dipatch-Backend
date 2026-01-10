@@ -1,12 +1,12 @@
 // src/config/square.ts
-import {  Environment, SquareClient } from 'square';
+import { SquareClient, SquareEnvironment } from 'square';
 
 const squareClient = new SquareClient({
   accessToken: process.env.SQUARE_ACCESS_TOKEN,
   environment:
     process.env.NODE_ENV === 'production'
-      ? Environment.Production
-      : Environment.Sandbox,
+      ? SquareEnvironment.Production
+      : SquareEnvironment.Sandbox,
 });
 
 // ✅ Access APIs using correct properties
