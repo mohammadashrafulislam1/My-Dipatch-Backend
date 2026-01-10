@@ -384,4 +384,37 @@ export const getDriverRideHistory = async (req, res) => {
       res.status(500).json({ message: "Server error retrieving driver ride history." });
     }
   };
-  
+
+  // Delete a ride by ID
+export const deleteRideById = async (req, res) => {
+  try {
+    const { rideId } = req.params;
+
+    if (!rideId) {
+      return res.status(400).json({ message: "Missing rideId parameter." });
+    }
+
+    const ride = await RideModel.findById(rideId);
+
+    if (!ride) {
+      return res.status(404).json({ message: "Ride not found." });
+    }
+
+    // Optional: Refund logic if payment was completed
+    if (ride.isPaid) {
+      console.log(`Ride ${rideId} was paid. Consider refunding before deletion.`);
+      // You can call your SquarePaymentService.refundPayment here if needed
+    }
+
+    // Delete the ride
+    await RideModel.findByIdAndDelete(rideId);
+
+    res.status(200).json({
+      message: "Ride deleted successfully.",
+      rideId,
+    });
+  } catch (err) {
+    console.error("Delete ride error:", err);
+    res.status(500).json({ message: "Server error deleting ride." });
+  }
+};

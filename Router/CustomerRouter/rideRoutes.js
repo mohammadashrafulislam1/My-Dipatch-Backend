@@ -1,5 +1,5 @@
 import express from "express";
-import { calculateFare, getAllRides, getDriverRideHistory, getRideById, getRideHistory, requestRide, updateRideStatus } from "../../Controllers/CustomerController/RideController.js";
+import { calculateFare, deleteRideById, getAllRides, getDriverRideHistory, getRideById, getRideHistory, requestRide, updateRideStatus } from "../../Controllers/CustomerController/RideController.js";
 import { getDriverEarnings } from "../../Controllers/RiderController/DriverController.js";
 
 export const rideRouter = express.Router();
@@ -17,3 +17,6 @@ rideRouter.put("/status/:rideId", updateRideStatus);
 rideRouter.get("/driver/:driverId/history", getDriverRideHistory);
 
 rideRouter.get("/driver/:driverId/earnings", getDriverEarnings);
+
+
+rideRouter.delete("/:rideId", deleteRideById);
