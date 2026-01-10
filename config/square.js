@@ -5,7 +5,8 @@ import { SquareClient, SquareEnvironment } from 'square';
 const squareClient = new SquareClient({
   // In v43+, the key is 'token', not 'accessToken'
   token: process.env.SQUARE_ACCESS_TOKEN,
-  environment: process.env.NODE_ENV === 'production' ? SquareEnvironment.Production : SquareEnvironment.Sandbox,
+  // environment: process.env.NODE_ENV === 'production' ? SquareEnvironment.Production : SquareEnvironment.Sandbox,
+  environment: SquareEnvironment.Sandbox,
 });
 
 // Export APIs 
