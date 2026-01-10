@@ -1,21 +1,16 @@
-// src/config/square.js
-import { SquareClient, SquareEnvironment } from 'square';
+import { SquareClient, Environment } from 'square';
 
-// Create the client
 const squareClient = new SquareClient({
-  // In v43+, the key is 'token', not 'accessToken'
-  token: process.env.SQUARE_ACCESS_TOKEN,
-  // environment: process.env.NODE_ENV === 'production' ? SquareEnvironment.Production : SquareEnvironment.Sandbox,
-  environment: SquareEnvironment.Sandbox,
+  accessToken: process.env.SQUARE_ACCESS_TOKEN, // must be 'accessToken', not 'token'
+  environment: process.env.SQUARE_ENV === 'production' ? Environment.Production : Environment.Sandbox,
 });
 
-// Export APIs 
-// Note: In v43+, these are accessible directly as properties of the client
-export const paymentsApi = squareClient.payments;
-export const refundsApi = squareClient.refunds;
-export const locationsApi = squareClient.locations;
-export const ordersApi = squareClient.orders;
-export const customersApi = squareClient.customers;
-export const webhookSubscriptionsApi = squareClient.webhookSubscriptions;
+// Export the API objects properly
+export const paymentsApi = squareClient.paymentsApi;   // <--- note the 'Api' suffix
+export const refundsApi = squareClient.refundsApi;
+export const locationsApi = squareClient.locationsApi;
+export const ordersApi = squareClient.ordersApi;
+export const customersApi = squareClient.customersApi;
+export const webhookSubscriptionsApi = squareClient.webhookSubscriptionsApi;
 
 export default squareClient;
