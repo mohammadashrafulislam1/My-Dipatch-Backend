@@ -17,4 +17,10 @@ const squareClient = new SquareClient({
 });
 
 export const paymentsApi = squareClient.payments;
-// ... rest of your exports
+export const refundsApi = squareClient.refunds;    // NOT refundsApi
+export const locationsApi = squareClient.locations;
+export const ordersApi = squareClient.orders;
+export const customersApi = squareClient.customers;
+export const webhookSubscriptionsApi = squareClient.webhookSubscriptions;
+
+export default squareClient;
