@@ -1,7 +1,7 @@
-import { default as squareClient } from '../config/square.js';
 import { v4 as uuidv4 } from 'uuid';
 import { SquarePaymentModel } from '../Model/SquarePayment.js';
 import { RideModel } from '../Model/CustomerModel/Ride.js';
+import squareClient from '../config/square.js'; // default import
 
 export class SquarePaymentService {
   static async processRidePayment({
@@ -30,8 +30,9 @@ export class SquarePaymentService {
         metadata: { rideId, customerId, driverId: driverId || 'unassigned', type: 'ride_fare' },
       };
 
-      // ✅ NEW: call createPayment on squareClient.payments
-      const { result: { payment } } = await squareClient.payments.createPayment(paymentRequest);
+      // ✅ Use squareClient.payments.createPayment
+      const { result, statusCode } = await squareClient.payments.createPayment(paymentRequest);
+      const payment = result.payment;
 
       const paymentRecord = new SquarePaymentModel({
         rideId,
@@ -43,8 +44,8 @@ export class SquarePaymentService {
         currency: 'CAD',
         paymentStatus: payment.status === 'COMPLETED' ? 'paid' : 'failed',
         squarePaymentId: payment.id,
-        cardLast4: payment.cardDetails?.last4,
-        cardBrand: payment.cardDetails?.cardBrand,
+        cardLast4: payment.cardDetails?.card?.last4,
+        cardBrand: payment.cardDetails?.card?.cardBrand,
         receiptUrl: payment.receiptUrl,
         processedAt: new Date(),
       });
@@ -65,7 +66,6 @@ export class SquarePaymentService {
         currency: payment.amountMoney.currency,
         receiptUrl: payment.receiptUrl,
       };
-
     } catch (error) {
       console.error('Square payment error:', error);
       throw new Error(`Payment failed: ${error.errors?.[0]?.detail || error.message}`);
@@ -86,8 +86,9 @@ export class SquarePaymentService {
         metadata: { rideId, type: 'ride_refund' },
       };
 
-      // ✅ NEW: call refundPayment on squareClient.refunds
-      const { result: { refund } } = await squareClient.refunds.refundPayment(refundRequest);
+      // ✅ Use squareClient.refunds.refundPayment
+      const { result } = await squareClient.refunds.refundPayment(refundRequest);
+      const refund = result.refund;
 
       const paymentRecord = await SquarePaymentModel.findOne({ squarePaymentId: paymentId });
       if (paymentRecord) {
@@ -96,8 +97,12 @@ export class SquarePaymentService {
         await paymentRecord.save();
       }
 
-      return { success: true, refundId: refund.id, status: refund.status, amount: refund.amountMoney.amount / 100 };
-
+      return {
+        success: true,
+        refundId: refund.id,
+        status: refund.status,
+        amount: refund.amountMoney.amount / 100,
+      };
     } catch (error) {
       console.error('Square refund error:', error);
       throw error;
