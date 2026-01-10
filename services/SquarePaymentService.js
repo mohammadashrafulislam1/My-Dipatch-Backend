@@ -1,7 +1,8 @@
+// src/services/SquarePaymentService.js
 import { v4 as uuidv4 } from 'uuid';
 import { SquarePaymentModel } from '../Model/SquarePayment.js';
 import { RideModel } from '../Model/CustomerModel/Ride.js';
-import squareClient from '../config/square.js'; // default import
+import squareClient, { paymentsApi, refundsApi } from '../config/square.js'; // import APIs from config
 
 export class SquarePaymentService {
   static async processRidePayment({
@@ -30,8 +31,8 @@ export class SquarePaymentService {
         metadata: { rideId, customerId, driverId: driverId || 'unassigned', type: 'ride_fare' },
       };
 
-      // ✅ Use squareClient.payments.createPayment
-      const { result, statusCode } = await squareClient.payments.createPayment(paymentRequest);
+      // ✅ Correct: use paymentsApi from v43+ client
+      const { result } = await paymentsApi.createPayment(paymentRequest);
       const payment = result.payment;
 
       const paymentRecord = new SquarePaymentModel({
@@ -72,10 +73,6 @@ export class SquarePaymentService {
     }
   }
 
-  static async getPaymentByRideId(rideId) {
-    return await SquarePaymentModel.findOne({ rideId });
-  }
-
   static async refundPayment(paymentId, rideId, amount, reason = 'Ride cancelled') {
     try {
       const refundRequest = {
@@ -86,8 +83,8 @@ export class SquarePaymentService {
         metadata: { rideId, type: 'ride_refund' },
       };
 
-      // ✅ Use squareClient.refunds.refundPayment
-      const { result } = await squareClient.refunds.refundPayment(refundRequest);
+      // ✅ Correct: use refundsApi from v43+ client
+      const { result } = await refundsApi.refundPayment(refundRequest);
       const refund = result.refund;
 
       const paymentRecord = await SquarePaymentModel.findOne({ squarePaymentId: paymentId });
