@@ -1,13 +1,13 @@
 // src/config/square.js
-import Square from 'square'; // default import of the SDK
+import Square from 'square';
 
 // Create the client
-const squareClient = new Square.Client({
+const squareClient = new Square({
   environment: process.env.NODE_ENV === 'production' ? 'Production' : 'Sandbox',
   accessToken: process.env.SQUARE_ACCESS_TOKEN,
 });
 
-// Export the APIs
+// Export APIs
 export const paymentsApi = squareClient.paymentsApi;
 export const refundsApi = squareClient.refundsApi;
 export const locationsApi = squareClient.locationsApi;
