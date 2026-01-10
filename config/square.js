@@ -7,8 +7,10 @@ const squareClient = new SquareClient({
     process.env.NODE_ENV === 'production'
       ? SquareEnvironment.Production
       : SquareEnvironment.Sandbox,*/
-        environment: SquareEnvironment.Sandbox,
+   environment: Environment.Sandbox,
 });
+console.log("Square token loaded:", !!process.env.SQUARE_ACCESS_TOKEN);
+console.log("Square env:", process.env.SQUARE_ENV);
 
 // ✅ Access APIs using correct properties
 export const paymentsApi = squareClient.payments;  // NOT paymentsApi
