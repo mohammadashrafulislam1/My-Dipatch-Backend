@@ -3,10 +3,11 @@ import { SquareClient, SquareEnvironment } from 'square';
 
 const squareClient = new SquareClient({
   accessToken: process.env.SQUARE_ACCESS_TOKEN,
-  environment:
+  /*environment:
     process.env.NODE_ENV === 'production'
       ? SquareEnvironment.Production
-      : SquareEnvironment.Sandbox,
+      : SquareEnvironment.Sandbox,*/
+        environment: SquareEnvironment.Sandbox,
 });
 
 // ✅ Access APIs using correct properties
