@@ -1,6 +1,5 @@
 // src/config/square.ts
-import dotenv from "dotenv";
-dotenv.config();
+import 'dotenv/config'; // Ensure this is at the very top
 import { SquareClient, SquareEnvironment } from 'square';
 
 const squareClient = new SquareClient({
