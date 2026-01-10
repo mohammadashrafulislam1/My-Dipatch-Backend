@@ -7,7 +7,7 @@ const squareClient = new SquareClient({
     process.env.NODE_ENV === 'production'
       ? SquareEnvironment.Production
       : SquareEnvironment.Sandbox,*/
-   environment: Environment.Sandbox,
+   environment: SquareEnvironment.Sandbox,
 });
 console.log("Square token loaded:", !!process.env.SQUARE_ACCESS_TOKEN);
 console.log("Square env:", process.env.SQUARE_ENV);
