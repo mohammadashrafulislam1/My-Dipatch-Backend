@@ -8,7 +8,7 @@ const environment =
     : SquareEnvironment.Production;
 
 const squareClient = new SquareClient({
-  accessToken: token,
+  token: token,
   environment,
 });
 
