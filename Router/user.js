@@ -1,6 +1,6 @@
 import { ActiveUserStatus, CreateSignupController, deleteUser, getCurrentUser, 
     getUserById, 
-    getUsers, login, logout, updateUserProfile, updateUserRole, updateUserStatus } from "../Controllers/SignupController.js";
+    getUsers, login, logout, updateBillingAddress, updateUserProfile, updateUserRole, updateUserStatus } from "../Controllers/SignupController.js";
 import { verifyToken } from "../Middleware/jwt.js";
 import { upload } from "../Middleware/upload.js";
 import express from "express";
