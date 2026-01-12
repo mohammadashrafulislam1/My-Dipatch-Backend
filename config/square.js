@@ -7,21 +7,14 @@ const environment =
     ? SquareEnvironment.Sandbox
     : SquareEnvironment.Production;
 
-if (!token) {
-  console.error("❌ SQUARE_ACCESS_TOKEN is UNDEFINED. Check your environment variables.");
-} else {
-  console.log(`✅ Square Token detected. Starts with: ${token.substring(0, 12)}...`);
-  console.log(`✅ Environment set to: ${process.env.SQUARE_ENV}`);
-}
-
 const squareClient = new SquareClient({
-  accessToken: token,      // ⚠ must be accessToken
+  accessToken: token,
   environment,
 });
 
 async function test() {
   try {
-    const response = await squareClient.locations.listLocations(); // ⚠ correct method
+    const response = await squareClient.locations.list(); // ⚡ correct for your SDK
     console.log("Sandbox locations:", response.result.locations);
   } catch (e) {
     console.error("Auth error:", e);
