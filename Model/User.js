@@ -53,7 +53,17 @@ const userSchema = new mongoose.Schema({
     ratingCount: {
       type: Number,
       default: 0
-    }
+    },
+    // 🔥 Billing Address (NEW)
+  billingAddress: {
+    cardholderName: { type: String },
+    addressLine1: { type: String },
+    addressLine2: { type: String },
+    city: { type: String },
+    province: { type: String },
+    postalCode: { type: String },
+    country: { type: String, default: "CA" },
+  },
   }, { timestamps: true });
   
 export const UserModel  = mongoose.model('User', userSchema);
