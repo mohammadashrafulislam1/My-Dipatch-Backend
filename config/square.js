@@ -36,5 +36,5 @@ export const locationsApi = squareClient.locations;
 export const ordersApi = squareClient.orders;
 export const customersApi = squareClient.customers;
 export const webhookSubscriptionsApi = squareClient.webhookSubscriptions;
-
+// 
 export default squareClient;
