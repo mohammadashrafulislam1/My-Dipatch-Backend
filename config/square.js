@@ -20,8 +20,8 @@ const squareClient = new SquareClient({
 });
 async function test() {
   try {
-    const locations = await squareClient.locations.listLocations();
-    console.log("Locations:", locations.result.locations);
+    const locations = await squareClient.locations;
+    console.log("Locations:", locations);
   } catch (e) {
     console.error("Auth error:", e);
   }
