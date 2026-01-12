@@ -64,54 +64,62 @@ export class SquarePaymentController {
   }
 
   // Mark driver as paid when ride completes
-  static async markDriverPaid(req, res) {
-    try {
-      const { rideId, driverId } = req.body;
+ static async markDriverPaid(req, res) {
+  try {
+    const { rideId, driverId } = req.body;
 
-      const paymentRecord = await SquarePaymentModel.findOne({ rideId });
-      if (!paymentRecord) {
-        return res.status(404).json({
-          success: false,
-          message: "Payment record not found"
-        });
-      }
-
-      // Verify driver
-      if (paymentRecord.driverId && paymentRecord.driverId.toString() !== driverId) {
-        return res.status(403).json({
-          success: false,
-          message: "Unauthorized"
-        });
-      }
-
-      // Mark driver as paid
-      paymentRecord.driverId = driverId;
-      paymentRecord.driverPaid = true;
-      paymentRecord.driverPaidAt = new Date();
-      await paymentRecord.save();
-
-      // Call your existing DriverWalletController to add money to driver's wallet
-      await addRideTransaction({
-        driverId,
-        amount: paymentRecord.driverAmount,
-        rideId: paymentRecord.rideId,
-        method: "square"
-      });
-
-      res.json({
-        success: true,
-        message: "Driver payment recorded",
-        amount: paymentRecord.driverAmount
-      });
-
-    } catch (error) {
-      console.error("Mark driver paid error:", error);
-      res.status(500).json({
+    // Validate required fields
+    if (!rideId || !driverId) {
+      return res.status(400).json({
         success: false,
-        message: error.message
+        message: "rideId and driverId are required"
       });
     }
+
+    const paymentRecord = await SquarePaymentModel.findOne({ rideId });
+    if (!paymentRecord) {
+      return res.status(404).json({
+        success: false,
+        message: "Payment record not found"
+      });
+    }
+
+    // If driverId already exists in record, verify it matches
+    if (paymentRecord.driverId && paymentRecord.driverId.toString() !== driverId) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized: Driver ID mismatch"
+      });
+    }
+
+    // Mark driver as paid
+    paymentRecord.driverId = driverId;
+    paymentRecord.driverPaid = true;
+    paymentRecord.driverPaidAt = new Date();
+    await paymentRecord.save();
+
+    // Add to driver's wallet
+    await addRideTransaction({
+      driverId,
+      amount: paymentRecord.driverAmount,
+      rideId: paymentRecord.rideId,
+      method: "square"
+    });
+
+    res.json({
+      success: true,
+      message: "Driver payment recorded",
+      amount: paymentRecord.driverAmount
+    });
+
+  } catch (error) {
+    console.error("Mark driver paid error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
+}
 
   // Handle refund when ride is cancelled
   static async handleRefund(req, res) {
