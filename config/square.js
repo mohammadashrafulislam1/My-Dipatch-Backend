@@ -18,7 +18,16 @@ const squareClient = new SquareClient({
   accessToken: token,
   environment: environment,  // Use the variable here
 });
+async function test() {
+  try {
+    const locations = await squareClient.locations.listLocations();
+    console.log("Locations:", locations.result.locations);
+  } catch (e) {
+    console.error("Auth error:", e);
+  }
+}
 
+test();
 export const paymentsApi = squareClient.payments;
 export const refundsApi = squareClient.refunds;
 export const locationsApi = squareClient.locations;
