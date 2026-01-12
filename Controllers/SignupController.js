@@ -286,6 +286,27 @@ export const updateUserStatus = async (req, res) => {
   }
 };
 
+// UPDATE BILLING ADDRESS
+export const updateBillingAddress = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const billingAddress = req.body;
+
+    await UserModel.findByIdAndUpdate(userId, {
+      billingAddress,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Billing address updated successfully",
+      billingAddress,
+    });
+  } catch (err) {
+    console.error("Update billing error:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 // Change user activation (for drivers only)
 export const ActiveUserStatus = async (req, res) => {
   const { id } = req.params;

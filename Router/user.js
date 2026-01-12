@@ -17,6 +17,8 @@ userRouter.put(
   verifyToken('admin'),
   updateUserRole
 );
+userRouter.put("/billing-address", verifyToken(), updateBillingAddress);
+
 // Get current user route (protected)
 userRouter.get('/me/customer', verifyToken('customer'), getCurrentUser);
 userRouter.get('/me/driver', verifyToken('driver'), getCurrentUser);
