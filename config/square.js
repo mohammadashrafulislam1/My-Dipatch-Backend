@@ -22,7 +22,7 @@ async function test() {
   try {
     // Call the API method, not just the client object
     const response = await squareClient.locations.list();
-    console.log("Sandbox locations:", response.result.locations);
+    console.log("Sandbox locations:", response);
   } catch (e) {
     console.error("Auth error:", e);
   }
