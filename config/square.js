@@ -15,7 +15,7 @@ const squareClient = new SquareClient({
 async function test() {
   try {
     const response = await squareClient.locations.list(); // ⚡ correct for your SDK
-    console.log("Sandbox locations:", response.result.locations);
+    console.log("Sandbox locations:", response);
   } catch (e) {
     console.error("Auth error:", e);
   }
