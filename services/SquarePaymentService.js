@@ -40,43 +40,47 @@ export class SquarePaymentService {
         },
       };
 
-      const { result } = await paymentsApi.create(paymentRequest);
-      const payment = result.payment;
+     const response = await paymentsApi.create(paymentRequest);
+     console.log(response)
+const payment = response.payment; // get payment directly
 
-      const paymentRecord = new SquarePaymentModel({
-        rideId,
-        customerId,
-        driverId,
-        totalAmount,
-        driverAmount,
-        adminAmount,
-        currency: 'CAD',
-        paymentStatus: payment.status === 'COMPLETED' ? 'paid' : 'failed',
-        squarePaymentId: payment.id,
-        cardLast4: payment.cardDetails?.card?.last4,
-        cardBrand: payment.cardDetails?.card?.cardBrand,
-        receiptUrl: payment.receiptUrl,
-        processedAt: new Date(),
-      });
+if (!payment) {
+  throw new Error("Payment response is empty or invalid.");
+}
 
-      await paymentRecord.save();
+const paymentRecord = new SquarePaymentModel({
+  rideId,
+  customerId,
+  driverId,
+  totalAmount,
+  driverAmount,
+  adminAmount,
+  currency: 'CAD',
+  paymentStatus: payment.status === 'COMPLETED' ? 'paid' : 'failed',
+  squarePaymentId: payment.id,
+  cardLast4: payment.cardDetails?.card?.last4,
+  cardBrand: payment.cardDetails?.card?.cardBrand,
+  receiptUrl: payment.receiptUrl,
+  processedAt: new Date(),
+});
 
-      await RideModel.findByIdAndUpdate(rideId, {
-        isPaid: payment.status === 'COMPLETED',
-        paymentStatus: payment.status === 'COMPLETED' ? 'paid' : 'failed',
-      });
+await paymentRecord.save();
 
-      return {
-        success: payment.status === 'COMPLETED',
-        paymentId: payment.id,
-        status: payment.status,
-        paymentRecordId: paymentRecord._id,
+await RideModel.findByIdAndUpdate(rideId, {
+  isPaid: payment.status === 'COMPLETED',
+  paymentStatus: payment.status === 'COMPLETED' ? 'paid' : 'failed',
+});
 
-        // Square returns BigInt → convert back for frontend
-        amount: Number(payment.amountMoney.amount) / 100,
-        currency: payment.amountMoney.currency,
-        receiptUrl: payment.receiptUrl,
-      };
+return {
+  success: payment.status === 'COMPLETED',
+  paymentId: payment.id,
+  status: payment.status,
+  paymentRecordId: paymentRecord._id,
+  amount: Number(payment.amountMoney.amount) / 100,
+  currency: payment.amountMoney.currency,
+  receiptUrl: payment.receiptUrl,
+};
+
 
     } catch (error) {
       console.error('Square payment error:', error);
