@@ -1,6 +1,7 @@
 
 import { SquarePaymentModel } from '../Model/SquarePayment.js';
 import { SquarePaymentService } from '../services/SquarePaymentService.js';
+import { addRideTransaction } from './RiderController/DriverWalletController.js';
 
 export class SquarePaymentController {
   // Process payment when customer confirms ride
@@ -90,8 +91,6 @@ export class SquarePaymentController {
       await paymentRecord.save();
 
       // Call your existing DriverWalletController to add money to driver's wallet
-      // This uses your EXISTING system
-      const { addRideTransaction } = require('./DriverWalletController.js');
       await addRideTransaction({
         driverId,
         amount: paymentRecord.driverAmount,
