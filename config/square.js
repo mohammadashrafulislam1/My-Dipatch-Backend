@@ -20,14 +20,15 @@ const squareClient = new SquareClient({
 });
 async function test() {
   try {
-    const locations = await squareClient.locations;
-    console.log("Locations:", locations);
+    const response = await squareClient.locationsApi.listLocations();
+    console.log("Sandbox locations:", response.result.locations);
   } catch (e) {
     console.error("Auth error:", e);
   }
 }
 
 test();
+
 export const paymentsApi = squareClient.payments;
 export const refundsApi = squareClient.refunds;
 export const locationsApi = squareClient.locations;
