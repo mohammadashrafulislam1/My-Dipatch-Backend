@@ -1,28 +1,28 @@
-// src/config/square.ts
-import 'dotenv/config'; 
+import 'dotenv/config';
 import { SquareClient, SquareEnvironment } from 'square';
 
-// Use SQUARE_ENV instead of checking SQUARE_ENVIRONMENT
 const token = process.env.SQUARE_ACCESS_TOKEN;
-const environment = process.env.SQUARE_ENV === 'sandbox' ? SquareEnvironment.Sandbox : SquareEnvironment.Production;
+const environment =
+  process.env.SQUARE_ENV === 'sandbox'
+    ? SquareEnvironment.Sandbox
+    : SquareEnvironment.Production;
 
-// This will help you see EXACTLY what is being sent to Square (safe logging)
 if (!token) {
-  console.error("❌ SQUARE_ACCESS_TOKEN is UNDEFINED. Check your Render Environment Variables.");
+  console.error("❌ SQUARE_ACCESS_TOKEN is UNDEFINED. Check your environment variables.");
 } else {
   console.log(`✅ Square Token detected. Starts with: ${token.substring(0, 12)}...`);
   console.log(`✅ Environment set to: ${process.env.SQUARE_ENV}`);
 }
 
 const squareClient = new SquareClient({
-  accessToken: token,
-  environment: environment,  // Use the variable here
+  accessToken: token,      // ⚠ must be accessToken
+  environment,
 });
+
 async function test() {
   try {
-    // Call the API method, not just the client object
-    const response = await squareClient.locations.list();
-    console.log("Sandbox locations:", response);
+    const response = await squareClient.locations.listLocations(); // ⚠ correct method
+    console.log("Sandbox locations:", response.result.locations);
   } catch (e) {
     console.error("Auth error:", e);
   }
