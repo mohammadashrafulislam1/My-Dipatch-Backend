@@ -19,5 +19,12 @@ squarePaymentRouter.get('/status/:rideId', verifyToken(), SquarePaymentControlle
 
 // Get driver's Square earnings
 squarePaymentRouter.get('/driver-earnings/:driverId', verifyToken(), SquarePaymentController.getDriverSquareEarnings);
+// routes/squarePaymentRoutes.js
+
+// Get all transactions
+squarePaymentRouter.get('/status/all', verifyToken(), SquarePaymentController.getAllTransactions);
+
+// Get pending driver payments (for Pay Driver page)
+squarePaymentRouter.get('/driver-pending', verifyToken(), SquarePaymentController.getPendingDriverPayments);
 
 export default squarePaymentRouter;

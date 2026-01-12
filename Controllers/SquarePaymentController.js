@@ -217,4 +217,44 @@ export class SquarePaymentController {
       });
     }
   }
+
+  // Inside SquarePaymentController
+// Get all transactions (for admin)
+static async getAllTransactions(req, res) {
+  try {
+    const transactions = await SquarePaymentModel.find().sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      payments: transactions
+    });
+  } catch (error) {
+    console.error("Get all transactions error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+}
+
+// Get all pending driver payments (driverPaid = false)
+static async getPendingDriverPayments(req, res) {
+  try {
+    const payments = await SquarePaymentModel.find({
+      driverPaid: false,
+      paymentStatus: 'paid'
+    }).sort({ createdAt: 1 }); // oldest first
+
+    res.json({
+      success: true,
+      payments
+    });
+  } catch (error) {
+    console.error("Get pending driver payments error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+}
+
 }
