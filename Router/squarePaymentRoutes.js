@@ -14,15 +14,17 @@ squarePaymentRouter.post('/driver-paid', verifyToken(), SquarePaymentController.
 // Handle refund
 squarePaymentRouter.post('/refund', verifyToken(), SquarePaymentController.handleRefund);
 
-// Get payment status
-squarePaymentRouter.get('/status/:rideId', verifyToken(), SquarePaymentController.getPaymentStatus);
 
 // Get driver's Square earnings
 squarePaymentRouter.get('/driver-earnings/:driverId', verifyToken(), SquarePaymentController.getDriverSquareEarnings);
-// routes/squarePaymentRoutes.js
 
-// Get all transactions
+// routes/squarePaymentRoutes.js
+// Get all transactions (admin)
 squarePaymentRouter.get('/status/all', verifyToken(), SquarePaymentController.getAllTransactions);
+
+// Get payment status by rideId
+squarePaymentRouter.get('/status/:rideId', verifyToken(), SquarePaymentController.getPaymentStatus);
+
 
 // Get pending driver payments (for Pay Driver page)
 squarePaymentRouter.get('/driver-pending', verifyToken(), SquarePaymentController.getPendingDriverPayments);
