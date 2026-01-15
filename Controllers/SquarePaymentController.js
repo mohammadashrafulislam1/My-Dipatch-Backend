@@ -1,4 +1,5 @@
 
+import { DriverSquareAccount } from '../Model/DriverModel/DriverSquareAccount.js';
 import { SquarePaymentModel } from '../Model/SquarePayment.js';
 import { SquarePaymentService } from '../services/SquarePaymentService.js';
 import { addRideTransaction } from './RiderController/DriverWalletController.js';
@@ -266,25 +267,25 @@ static async getPendingDriverPayments(req, res) {
 }
  // Save Square payout method (frontend sends card token)
   static async saveSquarePayout(req, res) {
-    try {
-      const { token } = req.body;
-      const driverId = req.user.id; // assuming auth middleware adds user
+  try {
+    const { token, cardBrand, cardLast4 } = req.body;
+    const driverId = req.user.id; // from auth middleware
 
-      if (!token) {
-        return res.status(400).json({ success: false, message: "Token is required" });
-      }
-
-      // Save token to DB (or process via Square API to attach account)
-      const payout = await SquarePaymentModel.create({
-        driverId,
-        squareToken: token,
-        createdAt: new Date()
-      });
-
-      res.json({ success: true, message: "Square payout method saved", payout });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ success: false, message: err.message });
+    if (!token) {
+      return res.status(400).json({ success: false, message: "Token is required" });
     }
+
+    const payout = await DriverSquareAccount.create({
+      driverId,
+      squareToken: token,
+      cardBrand,
+      cardLast4
+    });
+
+    res.json({ success: true, message: "Payout method saved successfully", payout });
+
+  } catch (err) {
+    console.error("Save payout error:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 }
