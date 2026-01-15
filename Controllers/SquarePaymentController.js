@@ -289,6 +289,22 @@ static async getPendingDriverPayments(req, res) {
     res.status(500).json({ success: false, message: err.message });
   }
 }
+// Get saved Square cards for driver
+static async getDriverSavedCards(req, res) {
+  try {
+    const driverId = req.user.id; // from auth middleware
+
+    const cards = await DriverSquareAccount.find({ driverId });
+
+    res.json({
+      success: true,
+      cards, // returns array of saved cards
+    });
+  } catch (err) {
+    console.error("Get saved cards error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+}
 
 // Withdraw driver earnings to saved card
 static async withdrawToCard(req, res) {

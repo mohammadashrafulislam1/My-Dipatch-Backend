@@ -25,6 +25,8 @@ squarePaymentRouter.get('/status/all', verifyToken(), SquarePaymentController.ge
 // Get payment status by rideId
 squarePaymentRouter.get('/status/:rideId', verifyToken(), SquarePaymentController.getPaymentStatus);
 
+squarePaymentRouter.get('/square-payout', verifyToken(), SquarePaymentController.getDriverSavedCards);
+
 
 // Get pending driver payments (for Pay Driver page)
 squarePaymentRouter.get('/driver-pending', verifyToken(), SquarePaymentController.getPendingDriverPayments);
