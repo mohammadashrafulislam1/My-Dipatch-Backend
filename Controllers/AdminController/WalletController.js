@@ -1,5 +1,6 @@
 import { PricingModel } from "../../Model/AdminModel/Pricing.js";
 import { TransactionModel } from "../../Model/AdminModel/Wallet.js";
+import { DriverWallet } from "../../Model/DriverModel/DriverWallet.js";
 
 
 // Get wallet dashboard summary
@@ -112,4 +113,21 @@ export const getTransactionHistory = async (req, res) => {
     console.error("Transaction history error:", err);
     res.status(500).json({ message: "Server error fetching transactions" });
   }
+};
+
+export const approveWithdrawal = async (req, res) => {
+  const { walletId, transactionId } = req.body;
+
+  const wallet = await DriverWallet.findById(walletId);
+  const tx = wallet.transactions.id(transactionId);
+
+  if (!tx || tx.type !== "withdrawal")
+    return res.status(404).json({ message: "Transaction not found" });
+
+  tx.status = "paid";
+  wallet.totalWithdrawn += Math.abs(tx.amount);
+
+  await wallet.save();
+
+  res.json({ success: true, message: "Withdrawal approved & paid" });
 };

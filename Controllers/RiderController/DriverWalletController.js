@@ -67,21 +67,30 @@ export const withdrawToBank = async (req, res) => {
 
   try {
     const wallet = await DriverWallet.findOne({ driverId });
+    if (!wallet) return res.status(404).json({ message: "Wallet not found" });
 
-    if (!wallet || wallet.totalEarnings - wallet.totalWithdrawn < amount) {
+    const balance = wallet.transactions.reduce((s, t) => s + t.amount, 0);
+
+    if (amount > balance) {
       return res.status(400).json({ message: "Insufficient balance." });
     }
 
+    // create PENDING withdrawal
     wallet.transactions.push({
       type: "withdrawal",
       amount: -amount,
-      method: "bank"
+      method: "bank",
+      status: "pending"
     });
 
-    wallet.totalWithdrawn += amount;
     await wallet.save();
 
-    res.json({ message: "Withdrawal successful.", wallet });
+    res.json({
+      success: true,
+      message: "Withdrawal request submitted",
+      balanceAfter: balance - amount
+    });
+
   } catch (err) {
     console.error("Withdraw error:", err);
     res.status(500).json({ message: "Failed to withdraw." });
