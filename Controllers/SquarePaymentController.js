@@ -358,10 +358,16 @@ static async withdrawToCard(req, res) {
     if (!payoutMethod)
       return res.status(404).json({ success: false, message: 'No payout card found' });
 
-    // Optional: check wallet balance here
-    const payments = await SquarePaymentModel.find({ driverId, driverPaid: true });
-    const totalEarnings = payments.reduce((sum, p) => sum + p.driverAmount, 0);
-    if (amount > totalEarnings)
+    // Check wallet balance
+    const pendingPayments = await SquarePaymentModel.find({ 
+      driverId, 
+      driverPaid: false,
+      paymentStatus: 'paid'
+    });
+
+    const pendingBalance = pendingPayments.reduce((sum, p) => sum + p.driverAmount, 0);
+
+    if (amount > pendingBalance)
       return res.status(400).json({ success: false, message: 'Insufficient balance' });
 
     // Process payout
@@ -374,6 +380,19 @@ static async withdrawToCard(req, res) {
 
     if (!payoutResult.success)
       return res.status(400).json({ success: false, message: 'Payout failed', error: payoutResult.error });
+
+    // Mark relevant payments as paid
+    let remainingAmount = Number(amount);
+    for (const payment of pendingPayments) {
+      if (remainingAmount <= 0) break;
+
+      const payoutForThisPayment = Math.min(payment.driverAmount, remainingAmount);
+
+      payment.driverPaid = true;
+      await payment.save();
+
+      remainingAmount -= payoutForThisPayment;
+    }
 
     // Record in wallet
     await addRideTransaction({
