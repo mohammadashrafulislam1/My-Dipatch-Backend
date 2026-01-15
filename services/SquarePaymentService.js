@@ -125,4 +125,39 @@ return {
       throw error;
     }
   }
+
+  // Withdraw driver earnings to saved card
+static async processDriverPayout({ sourceId, amount, driverId, currency = 'CAD' }) {
+  try {
+    const cents = BigInt(Math.round(amount * 100));
+    const idempotencyKey = `driver-payout-${driverId}-${Date.now()}`;
+
+    const paymentRequest = {
+      sourceId, // saved card token
+      idempotencyKey,
+      amountMoney: { amount: cents, currency },
+      note: `Driver payout | Driver: ${driverId}`,
+      autocomplete: true,
+      metadata: { driverId, type: 'driver_payout' },
+      locationId: process.env.SQUARE_LOCATION_ID
+    };
+
+    const response = await paymentsApi.create(paymentRequest);
+    const payment = response.payment;
+
+    if (!payment) throw new Error('Driver payout failed, payment response empty');
+
+    return {
+      success: true,
+      paymentId: payment.id,
+      status: payment.status,
+      amount: Number(payment.amountMoney.amount) / 100,
+      currency: payment.amountMoney.currency,
+    };
+  } catch (err) {
+    console.error('Driver payout error:', err);
+    return { success: false, error: err.message || err };
+  }
+}
+
 }
