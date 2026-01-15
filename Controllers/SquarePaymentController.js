@@ -227,7 +227,7 @@ export class SquarePaymentController {
     }
   }
 
- // POST /square-payment/assign-driver
+// PUT /square-payment/assign-driver
 static async assignDriver(req, res) {
   try {
     const { rideId, driverId } = req.body;
@@ -236,19 +236,18 @@ static async assignDriver(req, res) {
       return res.status(400).json({ success: false, message: "rideId and driverId required" });
     }
 
-    // Find existing payment record for ride
     let paymentRecord = await SquarePaymentModel.findOne({ rideId });
 
     if (!paymentRecord) {
-      // If no record exists yet, create one with driverId
+      // Create new payment record if it doesn't exist
       paymentRecord = new SquarePaymentModel({
         rideId,
         driverId,
         driverPaid: false,
-        paymentStatus: 'pending', // or 'unpaid'
+        paymentStatus: 'pending',
       });
     } else {
-      // Update driverId if record exists
+      // Update existing record with driverId
       paymentRecord.driverId = driverId;
     }
 
@@ -265,6 +264,7 @@ static async assignDriver(req, res) {
     res.status(500).json({ success: false, message: error.message });
   }
 }
+
 
 
 static async getAllTransactions(req, res) {
