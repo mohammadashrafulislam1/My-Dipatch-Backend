@@ -16,7 +16,7 @@ export class SquarePaymentController {
         adminAmount,
         driverSquareAccountId
       } = req.body;
-
+   console.log("driverSquareAccountId", driverSquareAccountId)
       // Validate
       if (!rideId || !cardToken || !customerId || !totalAmount || !driverAmount || !adminAmount) {
         return res.status(400).json({
@@ -33,7 +33,6 @@ export class SquarePaymentController {
         totalAmount: parseFloat(totalAmount),
         driverAmount: parseFloat(driverAmount),
         adminAmount: parseFloat(adminAmount),
-        driverSquareAccountId
       });
 
       if (!paymentResult.success) {
