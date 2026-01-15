@@ -264,5 +264,27 @@ static async getPendingDriverPayments(req, res) {
     });
   }
 }
+ // Save Square payout method (frontend sends card token)
+  static async saveSquarePayout(req, res) {
+    try {
+      const { token } = req.body;
+      const driverId = req.user.id; // assuming auth middleware adds user
 
+      if (!token) {
+        return res.status(400).json({ success: false, message: "Token is required" });
+      }
+
+      // Save token to DB (or process via Square API to attach account)
+      const payout = await SquarePaymentModel.create({
+        driverId,
+        squareToken: token,
+        createdAt: new Date()
+      });
+
+      res.json({ success: true, message: "Square payout method saved", payout });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
 }
