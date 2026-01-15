@@ -371,9 +371,9 @@ static async withdrawToCard(req, res) {
     if (amount > pendingBalance)
       return res.status(400).json({ success: false, message: 'Insufficient balance' });
 
-    // Process payout
-   // Generate idempotency key (≤45 chars) for Square
-const idempotencyKey = crypto.randomBytes(16).toString('hex'); // 32 chars
+   const shortDriverId = driverId.slice(-8); // last 8 chars
+const shortRideId = rideId ? rideId.slice(-8) : '';
+const idempotencyKey = `${shortDriverId}-${shortRideId}-${Date.now()}`.slice(0, 45);
 
 // Process payout
 const payoutResult = await SquarePaymentService.processDriverPayout({
