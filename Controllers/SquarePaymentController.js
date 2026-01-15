@@ -1,4 +1,5 @@
 
+import crypto from 'crypto';
 import { DriverSquareAccount } from '../Model/DriverModel/DriverSquareAccount.js';
 import { SquarePaymentModel } from '../Model/SquarePayment.js';
 import { SquarePaymentService } from '../services/SquarePaymentService.js';
@@ -371,12 +372,18 @@ static async withdrawToCard(req, res) {
       return res.status(400).json({ success: false, message: 'Insufficient balance' });
 
     // Process payout
-    const payoutResult = await SquarePaymentService.processDriverPayout({
-      sourceId: payoutMethod.squareToken,
-      amount: Number(amount),
-      driverId,
-      currency: 'CAD',
-    });
+   // Generate idempotency key (≤45 chars) for Square
+const idempotencyKey = crypto.randomBytes(16).toString('hex'); // 32 chars
+
+// Process payout
+const payoutResult = await SquarePaymentService.processDriverPayout({
+  sourceId: payoutMethod.squareToken,
+  amount: Number(amount),
+  driverId,
+  currency: 'CAD',
+  idempotencyKey,
+});
+
 
     if (!payoutResult.success)
       return res.status(400).json({ success: false, message: 'Payout failed', error: payoutResult.error });
