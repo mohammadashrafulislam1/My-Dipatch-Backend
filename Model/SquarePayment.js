@@ -48,9 +48,9 @@ const squarePaymentSchema = new mongoose.Schema({
     type: String,
     default: "CAD"
   },
-  
   // Card Details
   cardLast4: String,
+  driverSquareAccountId: String,
   cardBrand: String,
   receiptUrl: String,
   

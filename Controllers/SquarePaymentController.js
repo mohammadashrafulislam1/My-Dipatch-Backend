@@ -13,7 +13,8 @@ export class SquarePaymentController {
         customerId,
         totalAmount,
         driverAmount,
-        adminAmount
+        adminAmount,
+        driverSquareAccountId
       } = req.body;
 
       // Validate
@@ -31,7 +32,8 @@ export class SquarePaymentController {
         customerId,
         totalAmount: parseFloat(totalAmount),
         driverAmount: parseFloat(driverAmount),
-        adminAmount: parseFloat(adminAmount)
+        adminAmount: parseFloat(adminAmount),
+        driverSquareAccountId
       });
 
       if (!paymentResult.success) {
@@ -225,8 +227,8 @@ export class SquarePaymentController {
     }
   }
 
-  // Inside SquarePaymentController
-// Get all transactions (for admin)
+ 
+
 static async getAllTransactions(req, res) {
   try {
     const transactions = await SquarePaymentModel.find().sort({ createdAt: -1 });

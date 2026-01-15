@@ -13,6 +13,7 @@ export class SquarePaymentService {
     totalAmount,
     driverAmount,
     adminAmount,
+    driverSquareAccountId
   }) {
     try {
       const totalCents = Math.round(Number(totalAmount) * 100);
@@ -23,7 +24,7 @@ export class SquarePaymentService {
       const paymentRequest = {
         sourceId,
         idempotencyKey,
-
+driverSquareAccountId,
         // 🔴 MUST be BigInt in Square v43+
         amountMoney: { amount: BigInt(totalCents), currency: 'CAD' },
         appFeeMoney: { amount: BigInt(adminCents), currency: 'CAD' },
