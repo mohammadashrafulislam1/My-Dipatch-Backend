@@ -382,7 +382,8 @@ static async withdrawToCard(req, res) {
       console.log('Payout token:', payoutMethod.squareToken);
 
       // Generate a safe idempotency key (≤45 chars)
-      const idempotencyKey = crypto.randomBytes(16).toString('hex').slice(0, 45);
+      const idempotencyKey = crypto.randomBytes(10).toString('hex'); // 20 chars
+
 console.log('Idempotency Key:', idempotencyKey);
 
 
