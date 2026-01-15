@@ -382,8 +382,9 @@ static async withdrawToCard(req, res) {
       console.log('Payout token:', payoutMethod.squareToken);
 
       // Generate a safe idempotency key (≤45 chars)
-      const idempotencyKey = crypto.randomBytes(16).toString('hex'); // 32 chars
-      console.log('Idempotency Key:', idempotencyKey);
+      const idempotencyKey = crypto.randomBytes(16).toString('hex').slice(0, 45);
+console.log('Idempotency Key:', idempotencyKey);
+
 
       // Process payout via Square
       const payoutResult = await SquarePaymentService.processDriverPayout({
