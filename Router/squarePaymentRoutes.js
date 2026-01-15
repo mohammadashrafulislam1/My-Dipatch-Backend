@@ -14,7 +14,7 @@ squarePaymentRouter.post('/driver-paid', verifyToken(), SquarePaymentController.
 // Handle refund
 squarePaymentRouter.post('/refund', verifyToken(), SquarePaymentController.handleRefund);
 squarePaymentRouter.post('/withdraw-card', verifyToken(), SquarePaymentController.withdrawToCard);
-squarePaymentRouter.post('/assign-driver', verifyToken(), SquarePaymentController.assignDriver);
+squarePaymentRouter.put('/assign-driver', verifyToken(), SquarePaymentController.assignDriver);
 
 // Get driver's Square earnings
 squarePaymentRouter.get('/driver-earnings/:driverId', verifyToken(), SquarePaymentController.getDriverSquareEarnings);
