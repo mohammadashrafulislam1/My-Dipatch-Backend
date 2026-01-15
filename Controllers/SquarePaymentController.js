@@ -289,3 +289,4 @@ static async getPendingDriverPayments(req, res) {
     res.status(500).json({ success: false, message: err.message });
   }
 }
+}
