@@ -217,6 +217,40 @@ export class SquarePaymentController {
       return { success: false, error: err.message };
     }
   }
+// ------------------ SAVE DRIVER BANK ACCOUNT ------------------
+static async saveSquarePayout(req, res) {
+  try {
+    const driverId = req.user.id;
+    const { bankName, accountNumber, routingNumber, currency = 'CAD' } = req.body;
+
+    if (!bankName || !accountNumber || !routingNumber) {
+      return res.status(400).json({ success: false, message: "All bank account fields are required" });
+    }
+
+    // Optional: prevent duplicates by checking existing account numbers
+    const existing = await DriverSquareAccount.findOne({ driverId, accountNumber });
+    if (existing) {
+      return res.status(400).json({ success: false, message: "Bank account already saved" });
+    }
+
+    const newBankAccount = new DriverSquareAccount({
+      driverId,
+      bankName,
+      accountNumber, // in production, encrypt this!
+      routingNumber,
+      currency,
+      createdAt: new Date()
+    });
+
+    await newBankAccount.save();
+
+    res.json({ success: true, message: "Bank account saved successfully", bankAccount: newBankAccount });
+  } catch (err) {
+    console.error("saveSquarePayout error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+}
+
 
   // ------------------ WITHDRAW TO BANK ------------------
   static async withdrawToBank(req, res) {
