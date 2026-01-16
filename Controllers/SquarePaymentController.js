@@ -4,6 +4,7 @@ import { DriverSquareAccount } from '../Model/DriverModel/DriverSquareAccount.js
 import { SquarePaymentModel } from '../Model/SquarePayment.js';
 import { SquarePaymentService } from '../services/SquarePaymentService.js';
 import { addRideTransaction } from './RiderController/DriverWalletController.js';
+import { PayoutsApi } from 'square/legacy';
 
 export class SquarePaymentController {
   // Process payment when customer confirms ride
@@ -266,8 +267,6 @@ static async assignDriver(req, res) {
   }
 }
 
-
-
 static async getAllTransactions(req, res) {
   try {
     const transactions = await SquarePaymentModel.find().sort({ createdAt: -1 });
@@ -304,30 +303,41 @@ static async getPendingDriverPayments(req, res) {
     });
   }
 }
- // Save Square payout method (frontend sends card token)
-  static async saveSquarePayout(req, res) {
-  try {
-    const { token, cardBrand, cardLast4 } = req.body;
-    const driverId = req.user.id; // from auth middleware
+static async processDriverPayoutToBank({ driverBankAccount, amount, driverId }) {
+    try {
+      const cents = BigInt(Math.round(amount * 100));
 
-    if (!token) {
-      return res.status(400).json({ success: false, message: "Token is required" });
+      const idempotencyKey = `driver-bank-payout-${driverId}-${Date.now()}`;
+
+      const payoutRequest = {
+        idempotencyKey,
+        locationId: process.env.SQUARE_LOCATION_ID,
+        destination: {
+          type: 'BANK_ACCOUNT',
+          bankAccountId: driverBankAccount.bankAccountId // this comes from Square's verified bank account
+        },
+        amountMoney: {
+          amount: cents,
+          currency: 'CAD'
+        },
+        note: `Driver payout | Driver: ${driverId}`
+      };
+
+      const response = await PayoutsApi.createPayout(payoutRequest);
+
+      if (!response.payout) throw new Error('Payout failed');
+
+      return {
+        success: true,
+        payoutId: response.payout.id,
+        status: response.payout.status,
+        amount: Number(response.payout.amountMoney.amount) / 100,
+      };
+    } catch (err) {
+      console.error('Driver bank payout error:', err);
+      return { success: false, error: err.message };
     }
-
-    const payout = await DriverSquareAccount.create({
-      driverId,
-      squareToken: token,
-      cardBrand,
-      cardLast4
-    });
-
-    res.json({ success: true, message: "Payout method saved successfully", payout });
-
-  } catch (err) {
-    console.error("Save payout error:", err);
-    res.status(500).json({ success: false, message: err.message });
   }
-}
 // Get saved Square cards for driver
 static async getDriverSavedCards(req, res) {
   try {
@@ -345,97 +355,70 @@ static async getDriverSavedCards(req, res) {
   }
 }
 
-// Withdraw driver earnings to saved card
-static async withdrawToCard(req, res) {
-    try {
-      const driverId = req.user.id;
-      const { amount } = req.body;
+static async withdrawToBank(req, res) {
+  try {
+    const driverId = req.user.id;
+    const { amount } = req.body;
 
-      if (!amount || Number(amount) <= 0) {
-        return res.status(400).json({ success: false, message: 'Enter a valid amount' });
-      }
-
-      // Get saved card token
-      const payoutMethod = await DriverSquareAccount.findOne({ driverId });
-      if (!payoutMethod) {
-        return res.status(404).json({ success: false, message: 'No payout card found' });
-      }
-
-      // Get pending driver payments
-      const pendingPayments = await SquarePaymentModel.find({
-        driverId,
-        driverPaid: false,
-        paymentStatus: 'paid'
-      });
-
-      const pendingBalance = pendingPayments.reduce((sum, p) => sum + p.driverAmount, 0);
-
-      if (amount > pendingBalance) {
-        return res.status(400).json({ success: false, message: 'Insufficient balance' });
-      }
-
-      // --- DEBUG LOGS ---
-      console.log('Driver ID:', driverId);
-      console.log('Pending Payments:', pendingPayments.map(p => ({ rideId: p.rideId, amount: p.driverAmount })));
-      console.log('Pending Balance:', pendingBalance);
-      console.log('Amount to withdraw:', amount);
-      console.log('Payout token:', payoutMethod.squareToken);
-
-      // Generate a safe idempotency key (≤45 chars)
-      const idempotencyKey = crypto.randomBytes(16).toString('base64') // base64
-  .replace(/[^a-zA-Z0-9]/g, '') // remove +, /, =
-  .slice(0, 20); // max 20 chars
-console.log('Idempotency Key:', idempotencyKey);
-
-
-      // Process payout via Square
-      const payoutResult = await SquarePaymentService.processDriverPayout({
-        sourceId: payoutMethod.squareToken,
-        amount: Number(amount),
-        driverId,
-        currency: 'CAD',
-        idempotencyKey,
-      });
-
-      if (!payoutResult.success) {
-        console.error('Payout failed:', payoutResult.error);
-        return res.status(400).json({ success: false, message: 'Payout failed', error: payoutResult.error });
-      }
-
-      // Mark relevant payments as paid (handle partial withdrawals)
-      let remainingAmount = Number(amount);
-      for (const payment of pendingPayments) {
-        if (remainingAmount <= 0) break;
-
-        const payoutForThisPayment = Math.min(payment.driverAmount, remainingAmount);
-        payment.driverPaid = true;
-        payment.driverPaidAt = new Date();
-        await payment.save();
-
-        remainingAmount -= payoutForThisPayment;
-      }
-
-      // Record the withdrawal in driver wallet
-      await addRideTransaction({
-        driverId,
-        amount: Number(amount),
-        method: 'square_card_withdrawal',
-        rideId: null
-      });
-
-      // Return success response
-      res.json({
-        success: true,
-        message: 'Withdrawal successful',
-        payout: payoutResult
-      });
-
-    } catch (err) {
-      console.error('Withdraw to card error:', err);
-      res.status(500).json({ success: false, message: err.message });
+    if (!amount || Number(amount) <= 0) {
+      return res.status(400).json({ success: false, message: 'Enter a valid amount' });
     }
+
+    // Get driver bank account
+    const bankAccount = await DriverBankAccount.findOne({ driverId });
+    if (!bankAccount) {
+      return res.status(404).json({ success: false, message: 'No bank account found' });
+    }
+
+    // Get pending driver payments
+    const pendingPayments = await SquarePaymentModel.find({
+      driverId,
+      driverPaid: false,
+      paymentStatus: 'paid'
+    });
+
+    const pendingBalance = pendingPayments.reduce((sum, p) => sum + p.driverAmount, 0);
+
+    if (amount > pendingBalance) {
+      return res.status(400).json({ success: false, message: 'Insufficient balance' });
+    }
+
+    // Process payout to bank
+    const payoutResult = await DriverSquareAccount.processDriverPayoutToBank({
+      driverBankAccount: bankAccount,
+      amount: Number(amount),
+      driverId
+    });
+
+    if (!payoutResult.success) {
+      return res.status(400).json({ success: false, message: 'Bank payout failed', error: payoutResult.error });
+    }
+
+    // Mark payments as paid
+    let remainingAmount = Number(amount);
+    for (const payment of pendingPayments) {
+      if (remainingAmount <= 0) break;
+      const payoutForThisPayment = Math.min(payment.driverAmount, remainingAmount);
+      payment.driverPaid = true;
+      payment.driverPaidAt = new Date();
+      await payment.save();
+      remainingAmount -= payoutForThisPayment;
+    }
+
+    // Record in wallet
+    await addRideTransaction({
+      driverId,
+      amount: Number(amount),
+      method: 'bank_withdrawal',
+      rideId: null
+    });
+
+    res.json({ success: true, message: 'Withdrawal successful', payout: payoutResult });
+
+  } catch (err) {
+    console.error('Withdraw to bank error:', err);
+    res.status(500).json({ success: false, message: err.message });
   }
-
-
+}
 
 }

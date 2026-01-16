@@ -2,14 +2,11 @@
 import mongoose from "mongoose";
 
 const driverSquareAccountSchema = new mongoose.Schema({
-  driverId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true
-  },
-  squareToken: { type: String, required: true },
-  cardBrand: String,
-  cardLast4: String,
+  driverId: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver', required: true },
+  bankName: { type: String },
+  accountNumber: { type: String }, // store encrypted in production
+  routingNumber: { type: String },
+  currency: { type: String, default: 'CAD' },
   createdAt: { type: Date, default: Date.now }
 });
 
