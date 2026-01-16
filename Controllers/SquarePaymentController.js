@@ -1,13 +1,14 @@
-
-import crypto from 'crypto';
-import { DriverSquareAccount } from '../Model/DriverModel/DriverSquareAccount.js';
-import { SquarePaymentModel } from '../Model/SquarePayment.js';
-import { SquarePaymentService } from '../services/SquarePaymentService.js';
-import { addRideTransaction } from './RiderController/DriverWalletController.js';
-import { PayoutsApi } from 'square/legacy';
+import crypto from "crypto";
+import { DriverSquareAccount } from "../Model/DriverModel/DriverSquareAccount.js";
+import { SquarePaymentModel } from "../Model/SquarePayment.js";
+import { SquarePaymentService } from "../services/SquarePaymentService.js";
+import { addRideTransaction } from "./RiderController/DriverWalletController.js";
+import { PayoutsApi } from "square/legacy";
+import { DriverBankAccount } from "../Model/DriverModel/DriverBankAccount.js";
 
 export class SquarePaymentController {
-  // Process payment when customer confirms ride
+
+  // ------------------ PAYMENTS ------------------
   static async processPayment(req, res) {
     try {
       const {
@@ -17,18 +18,12 @@ export class SquarePaymentController {
         totalAmount,
         driverAmount,
         adminAmount,
-        driverSquareAccountId
       } = req.body;
-   console.log("driverSquareAccountId", driverSquareAccountId)
-      // Validate
+
       if (!rideId || !cardToken || !customerId || !totalAmount || !driverAmount || !adminAmount) {
-        return res.status(400).json({
-          success: false,
-          message: "Missing required fields"
-        });
+        return res.status(400).json({ success: false, message: "Missing required fields" });
       }
 
-      // Process payment
       const paymentResult = await SquarePaymentService.processRidePayment({
         sourceId: cardToken,
         rideId,
@@ -39,164 +34,84 @@ export class SquarePaymentController {
       });
 
       if (!paymentResult.success) {
-        return res.status(400).json({
-          success: false,
-          message: "Payment failed"
-        });
+        return res.status(400).json({ success: false, message: "Payment failed" });
       }
 
-      res.status(200).json({
-        success: true,
-        message: "Payment processed successfully",
-        payment: {
-          id: paymentResult.paymentId,
-          status: paymentResult.status,
-          amount: paymentResult.amount,
-          currency: paymentResult.currency,
-          receiptUrl: paymentResult.receiptUrl
-        }
-      });
-
-    } catch (error) {
-      console.error("Payment error:", error);
-      res.status(500).json({
-        success: false,
-        message: "Payment processing failed",
-        error: error.message
-      });
+      res.json({ success: true, payment: paymentResult });
+    } catch (err) {
+      console.error("Payment error:", err);
+      res.status(500).json({ success: false, message: err.message });
     }
   }
 
-  // Mark driver as paid when ride completes
- static async markDriverPaid(req, res) {
-  try {
-    const { rideId, driverId } = req.body;
+  // ------------------ MARK DRIVER PAID ------------------
+  static async markDriverPaid(req, res) {
+    try {
+      const { rideId, driverId } = req.body;
 
-    // Validate required fields
-    if (!rideId || !driverId) {
-      return res.status(400).json({
-        success: false,
-        message: "rideId and driverId are required"
+      if (!rideId || !driverId) {
+        return res.status(400).json({ success: false, message: "rideId and driverId required" });
+      }
+
+      const payment = await SquarePaymentModel.findOne({ rideId });
+      if (!payment) return res.status(404).json({ success: false, message: "Payment not found" });
+
+      payment.driverId = driverId;
+      payment.driverPaid = true;
+      payment.driverPaidAt = new Date();
+      await payment.save();
+
+      await addRideTransaction({
+        driverId,
+        amount: payment.driverAmount,
+        rideId,
+        method: "square",
       });
+
+      res.json({ success: true, message: "Driver paid" });
+    } catch (err) {
+      console.error("markDriverPaid error:", err);
+      res.status(500).json({ success: false, message: err.message });
     }
-
-    const paymentRecord = await SquarePaymentModel.findOne({ rideId });
-    if (!paymentRecord) {
-      return res.status(404).json({
-        success: false,
-        message: "Payment record not found"
-      });
-    }
-
-    // If driverId already exists in record, verify it matches
-    if (paymentRecord.driverId && paymentRecord.driverId.toString() !== driverId) {
-      return res.status(403).json({
-        success: false,
-        message: "Unauthorized: Driver ID mismatch"
-      });
-    }
-
-    // Mark driver as paid
-    paymentRecord.driverId = driverId;
-    paymentRecord.driverPaid = true;
-    paymentRecord.driverPaidAt = new Date();
-    await paymentRecord.save();
-
-    // Add to driver's wallet
-    await addRideTransaction({
-      driverId,
-      amount: paymentRecord.driverAmount,
-      rideId: paymentRecord.rideId,
-      method: "square"
-    });
-
-    res.json({
-      success: true,
-      message: "Driver payment recorded",
-      amount: paymentRecord.driverAmount
-    });
-
-  } catch (error) {
-    console.error("Mark driver paid error:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
   }
-}
 
-  // Handle refund when ride is cancelled
+  // ------------------ REFUND ------------------
   static async handleRefund(req, res) {
     try {
       const { rideId, reason = "Ride cancelled" } = req.body;
 
-      const paymentRecord = await SquarePaymentModel.findOne({ rideId });
-      if (!paymentRecord) {
-        return res.status(404).json({
-          success: false,
-          message: "Payment record not found"
-        });
-      }
+      const payment = await SquarePaymentModel.findOne({ rideId });
+      if (!payment) return res.status(404).json({ success: false, message: "Payment not found" });
 
-      // Only refund if payment was successful
-      if (paymentRecord.paymentStatus !== 'paid') {
-        return res.status(400).json({
-          success: false,
-          message: "Payment not completed, cannot refund"
-        });
-      }
-
-      // Process refund through Square
-      const refundResult = await SquarePaymentService.refundPayment(
-        paymentRecord.squarePaymentId,
+      const refund = await SquarePaymentService.refundPayment(
+        payment.squarePaymentId,
         rideId,
-        paymentRecord.totalAmount,
+        payment.totalAmount,
         reason
       );
 
-      res.json({
-        success: true,
-        message: "Refund processed",
-        refund: refundResult
-      });
-
-    } catch (error) {
-      console.error("Refund error:", error);
-      res.status(500).json({
-        success: false,
-        message: error.message
-      });
+      res.json({ success: true, refund });
+    } catch (err) {
+      console.error("Refund error:", err);
+      res.status(500).json({ success: false, message: err.message });
     }
   }
 
-  // Get payment status
+  // ------------------ STATUS ------------------
   static async getPaymentStatus(req, res) {
     try {
       const { rideId } = req.params;
+      const payment = await SquarePaymentModel.findOne({ rideId });
 
-      const paymentRecord = await SquarePaymentModel.findOne({ rideId });
-      if (!paymentRecord) {
-        return res.status(404).json({
-          success: false,
-          message: "No payment record found"
-        });
-      }
+      if (!payment) return res.status(404).json({ success: false, message: "Not found" });
 
-      res.json({
-        success: true,
-        payment: paymentRecord
-      });
-
-    } catch (error) {
-      console.error("Get payment status error:", error);
-      res.status(500).json({
-        success: false,
-        message: error.message
-      });
+      res.json({ success: true, payment });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
     }
   }
 
-  // Get driver's Square earnings
+  // ------------------ EARNINGS ------------------
   static async getDriverSquareEarnings(req, res) {
     try {
       const { driverId } = req.params;
@@ -204,128 +119,93 @@ export class SquarePaymentController {
       const payments = await SquarePaymentModel.find({
         driverId,
         driverPaid: true,
-        paymentStatus: 'paid'
+        paymentStatus: "paid",
       });
 
-      const totalEarnings = payments.reduce((sum, payment) => sum + payment.driverAmount, 0);
+      const total = payments.reduce((s, p) => s + p.driverAmount, 0);
 
-      res.json({
-        success: true,
-        totalEarnings,
-        payments: payments.map(p => ({
-          rideId: p.rideId,
-          amount: p.driverAmount,
-          date: p.driverPaidAt,
-          currency: p.currency
-        }))
-      });
-
-    } catch (error) {
-      console.error("Get driver earnings error:", error);
-      res.status(500).json({
-        success: false,
-        message: error.message
-      });
+      res.json({ success: true, totalEarnings: total, payments });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
     }
   }
 
-// PUT /square-payment/assign-driver
-static async assignDriver(req, res) {
-  try {
-    const { rideId, driverId } = req.body;
+  // ------------------ ASSIGN DRIVER ------------------
+  static async assignDriver(req, res) {
+    try {
+      const { rideId, driverId } = req.body;
 
-    if (!rideId || !driverId) {
-      return res.status(400).json({ success: false, message: "rideId and driverId required" });
+      let payment = await SquarePaymentModel.findOne({ rideId });
+      if (!payment) {
+        payment = new SquarePaymentModel({ rideId, driverId });
+      } else {
+        payment.driverId = driverId;
+      }
+
+      await payment.save();
+      res.json({ success: true, payment });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
     }
+  }
 
-    let paymentRecord = await SquarePaymentModel.findOne({ rideId });
+  // ------------------ ALL TRANSACTIONS ------------------
+  static async getAllTransactions(req, res) {
+    try {
+      const tx = await SquarePaymentModel.find().sort({ createdAt: -1 });
+      res.json({ success: true, payments: tx });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
 
-    if (!paymentRecord) {
-      // Create new payment record if it doesn't exist
-      paymentRecord = new SquarePaymentModel({
-        rideId,
-        driverId,
+  // ------------------ PENDING PAYMENTS ------------------
+  static async getPendingDriverPayments(req, res) {
+    try {
+      const payments = await SquarePaymentModel.find({
         driverPaid: false,
-        paymentStatus: 'pending',
+        paymentStatus: "paid",
       });
-    } else {
-      // Update existing record with driverId
-      paymentRecord.driverId = driverId;
+      res.json({ success: true, payments });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
     }
-
-    await paymentRecord.save();
-
-    res.json({
-      success: true,
-      message: "Driver assigned to payment record",
-      payment: paymentRecord
-    });
-
-  } catch (error) {
-    console.error("Assign driver error:", error);
-    res.status(500).json({ success: false, message: error.message });
   }
-}
 
-static async getAllTransactions(req, res) {
-  try {
-    const transactions = await SquarePaymentModel.find().sort({ createdAt: -1 });
-    res.json({
-      success: true,
-      payments: transactions
-    });
-  } catch (error) {
-    console.error("Get all transactions error:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+  // ------------------ SAVED CARDS ------------------
+  static async getDriverSavedCards(req, res) {
+    try {
+      const driverId = req.user.id;
+      const cards = await DriverSquareAccount.find({ driverId });
+      res.json({ success: true, cards });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
+    }
   }
-}
 
-// Get all pending driver payments (driverPaid = false)
-static async getPendingDriverPayments(req, res) {
-  try {
-    const payments = await SquarePaymentModel.find({
-      driverPaid: false,
-      paymentStatus: 'paid'
-    }).sort({ createdAt: 1 }); // oldest first
-
-    res.json({
-      success: true,
-      payments
-    });
-  } catch (error) {
-    console.error("Get pending driver payments error:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-}
-static async processDriverPayoutToBank({ driverBankAccount, amount, driverId }) {
+  // ------------------ BANK PAYOUT ------------------
+  static async processDriverPayoutToBank({ driverBankAccount, amount, driverId }) {
     try {
       const cents = BigInt(Math.round(amount * 100));
-
-      const idempotencyKey = `driver-bank-payout-${driverId}-${Date.now()}`;
+      const idempotencyKey = crypto.randomBytes(10).toString("hex"); // 20 chars
 
       const payoutRequest = {
         idempotencyKey,
         locationId: process.env.SQUARE_LOCATION_ID,
         destination: {
-          type: 'BANK_ACCOUNT',
-          bankAccountId: driverBankAccount.bankAccountId // this comes from Square's verified bank account
+          type: "BANK_ACCOUNT",
+          bankAccountId: driverBankAccount.bankAccountId,
         },
         amountMoney: {
           amount: cents,
-          currency: 'CAD'
+          currency: "CAD",
         },
-        note: `Driver payout | Driver: ${driverId}`
+        note: `Driver payout ${driverId}`,
       };
 
       const response = await PayoutsApi.createPayout(payoutRequest);
 
-      if (!response.payout) throw new Error('Payout failed');
+      if (!response.payout) throw new Error("Payout failed");
 
       return {
         success: true,
@@ -334,91 +214,67 @@ static async processDriverPayoutToBank({ driverBankAccount, amount, driverId }) 
         amount: Number(response.payout.amountMoney.amount) / 100,
       };
     } catch (err) {
-      console.error('Driver bank payout error:', err);
+      console.error("Bank payout error:", err);
       return { success: false, error: err.message };
     }
   }
-// Get saved Square cards for driver
-static async getDriverSavedCards(req, res) {
-  try {
-    const driverId = req.user.id; // from auth middleware
 
-    const cards = await DriverSquareAccount.find({ driverId });
+  // ------------------ WITHDRAW TO BANK ------------------
+  static async withdrawToBank(req, res) {
+    try {
+      const driverId = req.user.id;
+      const { amount } = req.body;
 
-    res.json({
-      success: true,
-      cards, // returns array of saved cards
-    });
-  } catch (err) {
-    console.error("Get saved cards error:", err);
-    res.status(500).json({ success: false, message: err.message });
+      if (!amount || Number(amount) <= 0) {
+        return res.status(400).json({ success: false, message: "Invalid amount" });
+      }
+
+      const bankAccount = await DriverBankAccount.findOne({ driverId });
+      if (!bankAccount) {
+        return res.status(404).json({ success: false, message: "No bank account found" });
+      }
+
+      const pendingPayments = await SquarePaymentModel.find({
+        driverId,
+        driverPaid: false,
+        paymentStatus: "paid",
+      });
+
+      const balance = pendingPayments.reduce((s, p) => s + p.driverAmount, 0);
+      if (amount > balance) {
+        return res.status(400).json({ success: false, message: "Insufficient balance" });
+      }
+
+      const payoutResult = await SquarePaymentController.processDriverPayoutToBank({
+        driverBankAccount: bankAccount,
+        amount: Number(amount),
+        driverId,
+      });
+
+      if (!payoutResult.success) {
+        return res.status(400).json({ success: false, message: "Bank payout failed", error: payoutResult.error });
+      }
+
+      let remaining = Number(amount);
+      for (const p of pendingPayments) {
+        if (remaining <= 0) break;
+        p.driverPaid = true;
+        p.driverPaidAt = new Date();
+        await p.save();
+        remaining -= p.driverAmount;
+      }
+
+      await addRideTransaction({
+        driverId,
+        amount: Number(amount),
+        method: "bank_withdrawal",
+        rideId: null,
+      });
+
+      res.json({ success: true, message: "Withdrawal successful", payout: payoutResult });
+    } catch (err) {
+      console.error("Withdraw error:", err);
+      res.status(500).json({ success: false, message: err.message });
+    }
   }
-}
-
-static async withdrawToBank(req, res) {
-  try {
-    const driverId = req.user.id;
-    const { amount } = req.body;
-
-    if (!amount || Number(amount) <= 0) {
-      return res.status(400).json({ success: false, message: 'Enter a valid amount' });
-    }
-
-    // Get driver bank account
-    const bankAccount = await DriverBankAccount.findOne({ driverId });
-    if (!bankAccount) {
-      return res.status(404).json({ success: false, message: 'No bank account found' });
-    }
-
-    // Get pending driver payments
-    const pendingPayments = await SquarePaymentModel.find({
-      driverId,
-      driverPaid: false,
-      paymentStatus: 'paid'
-    });
-
-    const pendingBalance = pendingPayments.reduce((sum, p) => sum + p.driverAmount, 0);
-
-    if (amount > pendingBalance) {
-      return res.status(400).json({ success: false, message: 'Insufficient balance' });
-    }
-
-    // Process payout to bank
-    const payoutResult = await DriverSquareAccount.processDriverPayoutToBank({
-      driverBankAccount: bankAccount,
-      amount: Number(amount),
-      driverId
-    });
-
-    if (!payoutResult.success) {
-      return res.status(400).json({ success: false, message: 'Bank payout failed', error: payoutResult.error });
-    }
-
-    // Mark payments as paid
-    let remainingAmount = Number(amount);
-    for (const payment of pendingPayments) {
-      if (remainingAmount <= 0) break;
-      const payoutForThisPayment = Math.min(payment.driverAmount, remainingAmount);
-      payment.driverPaid = true;
-      payment.driverPaidAt = new Date();
-      await payment.save();
-      remainingAmount -= payoutForThisPayment;
-    }
-
-    // Record in wallet
-    await addRideTransaction({
-      driverId,
-      amount: Number(amount),
-      method: 'bank_withdrawal',
-      rideId: null
-    });
-
-    res.json({ success: true, message: 'Withdrawal successful', payout: payoutResult });
-
-  } catch (err) {
-    console.error('Withdraw to bank error:', err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-}
-
 }
