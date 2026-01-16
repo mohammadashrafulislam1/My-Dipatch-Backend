@@ -4,7 +4,6 @@ import { SquarePaymentModel } from "../Model/SquarePayment.js";
 import { SquarePaymentService } from "../services/SquarePaymentService.js";
 import { addRideTransaction } from "./RiderController/DriverWalletController.js";
 import { PayoutsApi } from "square/legacy";
-import { DriverBankAccount } from "../Model/DriverModel/DriverBankAccount.js";
 
 export class SquarePaymentController {
 
@@ -229,7 +228,7 @@ export class SquarePaymentController {
         return res.status(400).json({ success: false, message: "Invalid amount" });
       }
 
-      const bankAccount = await DriverBankAccount.findOne({ driverId });
+      const bankAccount = await DriverSquareAccount.findOne({ driverId });
       if (!bankAccount) {
         return res.status(404).json({ success: false, message: "No bank account found" });
       }
