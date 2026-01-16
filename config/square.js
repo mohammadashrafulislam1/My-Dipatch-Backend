@@ -27,6 +27,7 @@ export const paymentsApi = squareClient.payments;
 export const refundsApi = squareClient.refunds;
 export const locationsApi = squareClient.locations;
 export const ordersApi = squareClient.orders;
+export const PayoutsApi = squareClient.payouts;
 export const customersApi = squareClient.customers;
 export const webhookSubscriptionsApi = squareClient.webhookSubscriptions;
 // 

@@ -3,7 +3,6 @@ import { DriverSquareAccount } from "../Model/DriverModel/DriverSquareAccount.js
 import { SquarePaymentModel } from "../Model/SquarePayment.js";
 import { SquarePaymentService } from "../services/SquarePaymentService.js";
 import { addRideTransaction } from "./RiderController/DriverWalletController.js";
-import { PayoutsApi } from "square/legacy";
 
 export class SquarePaymentController {
 
