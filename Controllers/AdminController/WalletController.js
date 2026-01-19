@@ -131,3 +131,16 @@ export const approveWithdrawal = async (req, res) => {
 
   res.json({ success: true, message: "Withdrawal approved & paid" });
 };
+// GET /payment/withdrawal-requests
+export const getWithdrawalRequests = async (req, res) => {
+  try {
+    const requests = await AdminNotificationModel.find({ type: "withdrawal_request", status: "pending" })
+      .populate("driverId", "firstName lastName") // optional: get driver name
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, requests });
+  } catch (err) {
+    console.error("getWithdrawalRequests error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
