@@ -1,5 +1,5 @@
 import express from "express";
-import { getWalletSummary, requestWithdrawal, withdrawToBank } from "../../Controllers/RiderController/DriverWalletController.js";
+import { getWalletSummary, requestWithdrawal } from "../../Controllers/RiderController/DriverWalletController.js";
 
 export const driverWalletRouter = express.Router();
 
