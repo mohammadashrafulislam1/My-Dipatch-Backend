@@ -174,7 +174,7 @@ export class SquarePaymentController {
   // ------------------ SAVED CARDS ------------------
   static async getDriverSavedCards(req, res) {
     try {
-      const driverId = req.user.id;
+      const {driverId} = req.params;
       const cards = await DriverSquareAccount.find({ driverId });
       res.json({ success: true, cards });
     } catch (err) {

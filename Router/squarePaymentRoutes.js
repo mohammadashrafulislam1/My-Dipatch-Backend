@@ -21,7 +21,7 @@ squarePaymentRouter.get('/status/all', verifyToken('admin'), SquarePaymentContro
 squarePaymentRouter.get('/status/:rideId', verifyToken(), SquarePaymentController.getPaymentStatus);
 
 // Saved cards
-squarePaymentRouter.get('/square-payout', verifyToken(), SquarePaymentController.getDriverSavedCards);
+squarePaymentRouter.get('/square-payout/:driverId', verifyToken(), SquarePaymentController.getDriverSavedCards);
 
 // Pending payments
 squarePaymentRouter.get('/driver-pending', verifyToken(), SquarePaymentController.getPendingDriverPayments);
