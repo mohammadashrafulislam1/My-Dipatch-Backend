@@ -23,7 +23,6 @@ const transactionSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ["pending", "approved", "paid", "rejected"],
-    default: "paid" // rides = paid automatically
   },
   createdAt: {
     type: Date,

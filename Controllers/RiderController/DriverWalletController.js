@@ -41,7 +41,7 @@ export const getWalletSummary = async (req, res) => {
 };
 
 // Add ride payment to wallet
-export const addRideTransaction = async ({ driverId, amount, rideId, method = "cash" }) => {
+export const addRideTransaction = async ({ driverId, amount, rideId, method = "cash", status }) => {
   try {
     let wallet = await DriverWallet.findOne({ driverId });
 
@@ -53,7 +53,8 @@ export const addRideTransaction = async ({ driverId, amount, rideId, method = "c
       type: "ride",
       rideId,
       amount,
-      method
+      method,
+      status
     });
 
     wallet.totalEarnings += amount;
@@ -93,7 +94,7 @@ export const requestWithdrawal = async (req, res) => {
     }
 
     // Save a withdrawal request for admin
-    await AdminNotificationModel.create({
+    const withdrawalRequest = await AdminNotificationModel.create({
       type: "withdrawal_request",
       driverId,
       amount,
@@ -104,6 +105,15 @@ export const requestWithdrawal = async (req, res) => {
       },
       status: "pending",
       createdAt: new Date(),
+    });
+
+    // Add withdrawal transaction to wallet with status "pending"
+    await addRideTransaction({
+      driverId,
+      amount,
+      rideId: null, // since this is a withdrawal, not a ride
+      method: "withdrawal",
+      status: "pending",
     });
 
     res.json({ success: true, message: "Withdrawal request sent to admin!" });
