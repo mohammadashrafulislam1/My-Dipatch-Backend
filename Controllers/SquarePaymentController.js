@@ -3,7 +3,7 @@ import { DriverSquareAccount } from "../Model/DriverModel/DriverSquareAccount.js
 import { SquarePaymentModel } from "../Model/SquarePayment.js";
 import { SquarePaymentService } from "../services/SquarePaymentService.js";
 import { addRideTransaction } from "./RiderController/DriverWalletController.js";
-import { PayoutsApi } from "../config/square.js";
+import { payoutsApi } from "../config/square.js";
 
 export class SquarePaymentController {
 
@@ -202,7 +202,7 @@ export class SquarePaymentController {
         note: `Driver payout ${driverId}`,
       };
 
-      const response = await PayoutsApi.createPayout(payoutRequest);
+      const response = await payoutsApi.createPayout(payoutRequest);
 
       if (!response.payout) throw new Error("Payout failed");
 

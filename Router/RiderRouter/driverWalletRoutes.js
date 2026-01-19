@@ -1,8 +1,9 @@
 import express from "express";
-import { getWalletSummary, withdrawToBank } from "../../Controllers/RiderController/DriverWalletController.js";
+import { getWalletSummary, requestWithdrawal, withdrawToBank } from "../../Controllers/RiderController/DriverWalletController.js";
 
 export const driverWalletRouter = express.Router();
 
 driverWalletRouter.get("/:driverId", getWalletSummary);
-driverWalletRouter.post("/withdraw/:driverId", withdrawToBank);
+driverWalletRouter.get("/:driverId", getWalletSummary);
+driverWalletRouter.post("/request-withdrawal", requestWithdrawal);
 

@@ -1,4 +1,7 @@
+import { AdminNotificationModel } from "../../Model/AdminModel/AdminNotification.js";
+import { DriverSquareAccount } from "../../Model/DriverModel/DriverSquareAccount.js";
 import { DriverWallet } from "../../Model/DriverModel/DriverWallet.js";
+import { SquarePaymentModel } from "../../Model/SquarePayment.js";
 
 
 // Get wallet summary for driver
@@ -61,38 +64,51 @@ export const addRideTransaction = async ({ driverId, amount, rideId, method = "c
 };
 
 // Withdraw earnings
-export const withdrawToBank = async (req, res) => {
-  const { driverId } = req.params;
-  const { amount } = req.body;
-
+export const requestWithdrawal = async (req, res) => {
   try {
-    const wallet = await DriverWallet.findOne({ driverId });
-    if (!wallet) return res.status(404).json({ message: "Wallet not found" });
+    const driverId = req.user.id;
+    const { amount } = req.body;
 
-    const balance = wallet.transactions.reduce((s, t) => s + t.amount, 0);
-
-    if (amount > balance) {
-      return res.status(400).json({ message: "Insufficient balance." });
+    if (!amount || Number(amount) <= 0) {
+      return res.status(400).json({ success: false, message: "Enter valid amount" });
     }
 
-    // create PENDING withdrawal
-    wallet.transactions.push({
-      type: "withdrawal",
-      amount: -amount,
-      method: "bank",
-      status: "pending"
+    // Get pending payments
+    const pendingPayments = await SquarePaymentModel.find({
+      driverId,
+      driverPaid: false,
+      paymentStatus: "paid",
     });
 
-    await wallet.save();
+    const balance = pendingPayments.reduce((sum, p) => sum + p.driverAmount, 0);
 
-    res.json({
-      success: true,
-      message: "Withdrawal request submitted",
-      balanceAfter: balance - amount
+    if (amount > balance) {
+      return res.status(400).json({ success: false, message: "Insufficient balance" });
+    }
+
+    // Get driver bank info
+    const bankAccount = await DriverSquareAccount.findOne({ driverId });
+    if (!bankAccount) {
+      return res.status(404).json({ success: false, message: "No bank account found" });
+    }
+
+    // Save a withdrawal request for admin
+    await AdminNotificationModel.create({
+      type: "withdrawal_request",
+      driverId,
+      amount,
+      bankAccount: {
+        bankName: bankAccount.bankName,
+        accountNumber: bankAccount.accountNumber,
+        routingNumber: bankAccount.routingNumber,
+      },
+      status: "pending",
+      createdAt: new Date(),
     });
 
+    res.json({ success: true, message: "Withdrawal request sent to admin!" });
   } catch (err) {
-    console.error("Withdraw error:", err);
-    res.status(500).json({ message: "Failed to withdraw." });
+    console.error("requestWithdrawal error:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };
