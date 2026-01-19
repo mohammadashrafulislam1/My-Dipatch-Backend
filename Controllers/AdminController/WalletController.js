@@ -1,3 +1,4 @@
+import { AdminNotificationModel } from "../../Model/AdminModel/AdminNotification.js";
 import { PricingModel } from "../../Model/AdminModel/Pricing.js";
 import { TransactionModel } from "../../Model/AdminModel/Wallet.js";
 import { DriverWallet } from "../../Model/DriverModel/DriverWallet.js";
