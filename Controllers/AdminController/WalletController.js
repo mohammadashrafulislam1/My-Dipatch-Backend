@@ -135,9 +135,7 @@ export const approveWithdrawal = async (req, res) => {
 // GET /payment/withdrawal-requests
 export const getWithdrawalRequests = async (req, res) => {
   try {
-    const requests = await AdminNotificationModel.find({ type: "withdrawal_request", status: "pending" })
-      .populate("driverId", "firstName lastName") // optional: get driver name
-      .sort({ createdAt: -1 });
+    const requests = await AdminNotificationModel.find().sort({ createdAt: -1 });
 
     res.json({ success: true, requests });
   } catch (err) {
