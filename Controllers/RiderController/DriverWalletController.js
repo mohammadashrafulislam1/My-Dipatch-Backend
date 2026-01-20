@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { AdminNotificationModel } from "../../Model/AdminModel/AdminNotification.js";
 import { DriverSquareAccount } from "../../Model/DriverModel/DriverSquareAccount.js";
 import { DriverWallet } from "../../Model/DriverModel/DriverWallet.js";
@@ -40,7 +41,7 @@ export const getWalletSummary = async (req, res) => {
   }
 };
 
-// Add ride payment to wallet
+// Add ride/withdrawal transaction to wallet
 export const addRideTransaction = async ({
   driverId,
   amount,
@@ -50,7 +51,6 @@ export const addRideTransaction = async ({
   type = "ride",
 }) => {
   try {
-    // Ensure driverId is ObjectId
     const driverObjectId = mongoose.Types.ObjectId(driverId);
 
     let wallet = await DriverWallet.findOne({ driverId: driverObjectId });
@@ -84,39 +84,62 @@ export const addRideTransaction = async ({
   }
 };
 
-// Withdraw earnings
+// Request withdrawal
 export const requestWithdrawal = async (req, res) => {
   try {
-    const driverId = req.user.id;
+    const driverId = req.user.id; // driver id from JWT
     const { amount } = req.body;
 
     if (!amount || Number(amount) <= 0) {
-      return res.status(400).json({ success: false, message: "Enter valid amount" });
+      return res.status(400).json({ success: false, message: "Enter a valid amount" });
     }
 
-    // Get pending payments
-    const pendingPayments = await SquarePaymentModel.find({
-      driverId,
-      driverPaid: false,
-      paymentStatus: "paid",
-    });
+    // Ensure driverId is ObjectId
+    const driverObjectId = mongoose.Types.ObjectId(driverId);
 
-    const balance = pendingPayments.reduce((sum, p) => sum + p.driverAmount, 0);
+    // Fetch wallet
+    let wallet = await DriverWallet.findOne({ driverId: driverObjectId });
+    if (!wallet) {
+      wallet = new DriverWallet({
+        driverId: driverObjectId,
+        transactions: [],
+        totalEarnings: 0,
+        totalWithdrawn: 0,
+      });
+      await wallet.save();
+    }
 
-    if (amount > balance) {
+    // Calculate available balance
+    const pendingWithdrawals = wallet.transactions
+      .filter(tx => tx.type === "withdrawal" && tx.status === "pending")
+      .reduce((sum, tx) => sum + tx.amount, 0);
+
+    const availableBalance = wallet.totalEarnings - wallet.totalWithdrawn - pendingWithdrawals;
+
+    if (amount > availableBalance) {
       return res.status(400).json({ success: false, message: "Insufficient balance" });
     }
 
     // Get driver bank info
-    const bankAccount = await DriverSquareAccount.findOne({ driverId });
+    const bankAccount = await DriverSquareAccount.findOne({ driverId: driverObjectId });
     if (!bankAccount) {
       return res.status(404).json({ success: false, message: "No bank account found" });
     }
 
-    // Save a withdrawal request for admin
-    const withdrawalRequest = await AdminNotificationModel.create({
-      type: "withdrawal_request",
+    // Save withdrawal transaction in wallet (status: pending)
+    await addRideTransaction({
       driverId,
+      amount,
+      rideId: null,
+      method: "withdrawal",
+      status: "pending",
+      type: "withdrawal",
+    });
+
+    // Save a withdrawal request for admin
+    await AdminNotificationModel.create({
+      type: "withdrawal_request",
+      driverId: driverObjectId,
       amount,
       bankAccount: {
         bankName: bankAccount.bankName,
@@ -127,18 +150,7 @@ export const requestWithdrawal = async (req, res) => {
       createdAt: new Date(),
     });
 
-    // Add withdrawal transaction to wallet with status "pending"
-    await addRideTransaction({
-  driverId: driverId,   // string from JWT
-  amount,
-  rideId: null,
-  method: "withdrawal",
-  status: "pending",
-  type: "withdrawal",
-});
-
-
-    res.json({ success: true, message: "Withdrawal request sent to admin!" });
+    return res.json({ success: true, message: "Withdrawal request sent to admin!" });
   } catch (err) {
     console.error("requestWithdrawal error:", err);
     res.status(500).json({ success: false, message: err.message });
