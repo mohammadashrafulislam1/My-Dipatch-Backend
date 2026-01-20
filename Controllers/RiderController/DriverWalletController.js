@@ -51,7 +51,8 @@ export const addRideTransaction = async ({
   type = "ride",
 }) => {
   try {
-    const driverObjectId = mongoose.Types.ObjectId(driverId);
+    const stringId = driverId.toString()
+   const driverObjectId = new mongoose.Types.ObjectId(stringId);
 
     let wallet = await DriverWallet.findOne({ driverId: driverObjectId });
 
