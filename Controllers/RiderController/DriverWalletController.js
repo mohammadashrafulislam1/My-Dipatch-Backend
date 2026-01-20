@@ -50,11 +50,14 @@ export const addRideTransaction = async ({
   type = "ride",
 }) => {
   try {
-    let wallet = await DriverWallet.findOne({ driverId });
+    // Ensure driverId is ObjectId
+    const driverObjectId = mongoose.Types.ObjectId(driverId);
+
+    let wallet = await DriverWallet.findOne({ driverId: driverObjectId });
 
     if (!wallet) {
       wallet = new DriverWallet({
-        driverId,
+        driverId: driverObjectId,
         transactions: [],
         totalEarnings: 0,
         totalWithdrawn: 0,
@@ -70,12 +73,12 @@ export const addRideTransaction = async ({
       createdAt: new Date(),
     });
 
-    // ✅ ONLY rides increase earnings
     if (type === "ride") {
       wallet.totalEarnings += amount;
     }
 
     await wallet.save();
+    console.log("Transaction added:", wallet.transactions[wallet.transactions.length - 1]);
   } catch (err) {
     console.error("Add ride transaction error:", err);
   }
@@ -126,13 +129,14 @@ export const requestWithdrawal = async (req, res) => {
 
     // Add withdrawal transaction to wallet with status "pending"
     await addRideTransaction({
-      driverId,
-      amount,
-      rideId: null, // since this is a withdrawal, not a ride
-      method: "withdrawal",
-      status: "pending",
-  type: "withdrawal", 
-    });
+  driverId: driverId,   // string from JWT
+  amount,
+  rideId: null,
+  method: "withdrawal",
+  status: "pending",
+  type: "withdrawal",
+});
+
 
     res.json({ success: true, message: "Withdrawal request sent to admin!" });
   } catch (err) {
