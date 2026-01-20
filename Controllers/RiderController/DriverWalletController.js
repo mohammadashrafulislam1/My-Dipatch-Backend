@@ -99,7 +99,7 @@ export const requestWithdrawal = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid driver ID" });
     }
 
-    const driverObjectId = mongoose.Types.ObjectId(driverId);
+    const driverObjectId = new mongoose.Types.ObjectId(driverId.toString());
 
     // Fetch wallet, create if it doesn't exist
     let wallet = await DriverWallet.findOne({ driverId: driverObjectId });
