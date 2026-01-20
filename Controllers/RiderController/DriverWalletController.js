@@ -41,7 +41,7 @@ export const getWalletSummary = async (req, res) => {
 };
 
 // Add ride payment to wallet
-export const addRideTransaction = async ({ driverId, amount, rideId, method = "cash", status }) => {
+export const addRideTransaction = async ({ driverId, amount, rideId, method = "card", status,  type = "ride", }) => {
   try {
     let wallet = await DriverWallet.findOne({ driverId });
 
@@ -50,7 +50,7 @@ export const addRideTransaction = async ({ driverId, amount, rideId, method = "c
     }
 
     wallet.transactions.push({
-      type: "ride",
+      type,
       rideId,
       amount,
       method,
@@ -114,6 +114,7 @@ export const requestWithdrawal = async (req, res) => {
       rideId: null, // since this is a withdrawal, not a ride
       method: "withdrawal",
       status: "pending",
+  type: "withdrawal", 
     });
 
     res.json({ success: true, message: "Withdrawal request sent to admin!" });
