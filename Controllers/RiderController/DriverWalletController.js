@@ -88,17 +88,20 @@ export const addRideTransaction = async ({
 // Request withdrawal
 export const requestWithdrawal = async (req, res) => {
   try {
-    const driverId = req.user.id; // driver id from JWT
+    const driverId = req.user.id; // from JWT
     const { amount } = req.body;
 
     if (!amount || Number(amount) <= 0) {
       return res.status(400).json({ success: false, message: "Enter a valid amount" });
     }
 
-    // Ensure driverId is ObjectId
-    const driverObjectId = new mongoose.Types.ObjectId(driverId.toString());
+    if (!mongoose.Types.ObjectId.isValid(driverId)) {
+      return res.status(400).json({ success: false, message: "Invalid driver ID" });
+    }
 
-    // Fetch wallet
+    const driverObjectId = mongoose.Types.ObjectId(driverId);
+
+    // Fetch wallet, create if it doesn't exist
     let wallet = await DriverWallet.findOne({ driverId: driverObjectId });
     if (!wallet) {
       wallet = new DriverWallet({
@@ -127,7 +130,7 @@ export const requestWithdrawal = async (req, res) => {
       return res.status(404).json({ success: false, message: "No bank account found" });
     }
 
-    // Save withdrawal transaction in wallet (status: pending)
+    // Add pending withdrawal to wallet
     await addRideTransaction({
       driverId,
       amount,
@@ -137,7 +140,7 @@ export const requestWithdrawal = async (req, res) => {
       type: "withdrawal",
     });
 
-    // Save a withdrawal request for admin
+    // Notify admin
     await AdminNotificationModel.create({
       type: "withdrawal_request",
       driverId: driverObjectId,
@@ -154,6 +157,6 @@ export const requestWithdrawal = async (req, res) => {
     return res.json({ success: true, message: "Withdrawal request sent to admin!" });
   } catch (err) {
     console.error("requestWithdrawal error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({ success: false, message: err.message });
   }
 };
