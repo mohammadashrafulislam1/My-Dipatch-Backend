@@ -96,7 +96,7 @@ export const requestWithdrawal = async (req, res) => {
     }
 
     // Ensure driverId is ObjectId
-    const driverObjectId = mongoose.Types.ObjectId(driverId);
+    const driverObjectId = new mongoose.Types.ObjectId(driverId.toString());
 
     // Fetch wallet
     let wallet = await DriverWallet.findOne({ driverId: driverObjectId });
