@@ -41,12 +41,24 @@ export const getWalletSummary = async (req, res) => {
 };
 
 // Add ride payment to wallet
-export const addRideTransaction = async ({ driverId, amount, rideId, method = "card", status,  type = "ride", }) => {
+export const addRideTransaction = async ({
+  driverId,
+  amount,
+  rideId = null,
+  method = "card",
+  status,
+  type = "ride",
+}) => {
   try {
     let wallet = await DriverWallet.findOne({ driverId });
 
     if (!wallet) {
-      wallet = new DriverWallet({ driverId, transactions: [], totalEarnings: 0 });
+      wallet = new DriverWallet({
+        driverId,
+        transactions: [],
+        totalEarnings: 0,
+        totalWithdrawn: 0,
+      });
     }
 
     wallet.transactions.push({
@@ -54,10 +66,15 @@ export const addRideTransaction = async ({ driverId, amount, rideId, method = "c
       rideId,
       amount,
       method,
-      status
+      status,
+      createdAt: new Date(),
     });
 
-    wallet.totalEarnings += amount;
+    // ✅ ONLY rides increase earnings
+    if (type === "ride") {
+      wallet.totalEarnings += amount;
+    }
+
     await wallet.save();
   } catch (err) {
     console.error("Add ride transaction error:", err);
