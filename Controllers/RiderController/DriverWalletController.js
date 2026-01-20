@@ -4,44 +4,7 @@ import { DriverSquareAccount } from "../../Model/DriverModel/DriverSquareAccount
 import { DriverWallet } from "../../Model/DriverModel/DriverWallet.js";
 import { SquarePaymentModel } from "../../Model/SquarePayment.js";
 
-
-// Get wallet summary for driver
-export const getWalletSummary = async (req, res) => {
-  const { driverId } = req.params;
-
-  try {
-    const wallet = await DriverWallet.findOne({ driverId });
-
-    if (!wallet) {
-      return res.status(404).json({ message: "Wallet not found." });
-    }
-
-    const today = new Date();
-    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-    const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
-
-    const todayEarnings = wallet.transactions
-      .filter(tx => tx.type === "ride" && new Date(tx.createdAt) >= startOfDay)
-      .reduce((sum, tx) => sum + tx.amount, 0);
-
-    const weekEarnings = wallet.transactions
-      .filter(tx => tx.type === "ride" && new Date(tx.createdAt) >= startOfWeek)
-      .reduce((sum, tx) => sum + tx.amount, 0);
-
-    res.json({
-      totalEarnings: wallet.totalEarnings,
-      totalWithdrawn: wallet.totalWithdrawn,
-      todayEarnings,
-      weekEarnings,
-      transactions: wallet.transactions.reverse() // recent first
-    });
-  } catch (err) {
-    console.error("Wallet summary error:", err);
-    res.status(500).json({ message: "Error fetching wallet data." });
-  }
-};
-
-// Add ride/withdrawal transaction to wallet
+// Helper: add ride or withdrawal transaction to wallet
 export const addRideTransaction = async ({
   driverId,
   amount,
@@ -51,8 +14,8 @@ export const addRideTransaction = async ({
   type = "ride",
 }) => {
   try {
-    const stringId = driverId.toString()
-   const driverObjectId = new mongoose.Types.ObjectId(stringId);
+    if (!mongoose.Types.ObjectId.isValid(driverId)) throw new Error("Invalid driverId");
+    const driverObjectId = new mongoose.Types.ObjectId(driverId);
 
     let wallet = await DriverWallet.findOne({ driverId: driverObjectId });
 
@@ -82,6 +45,48 @@ export const addRideTransaction = async ({
     console.log("Transaction added:", wallet.transactions[wallet.transactions.length - 1]);
   } catch (err) {
     console.error("Add ride transaction error:", err);
+    throw err;
+  }
+};
+
+// Get wallet summary
+export const getWalletSummary = async (req, res) => {
+  try {
+    const { driverId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(driverId)) {
+      return res.status(400).json({ message: "Invalid driver ID" });
+    }
+
+    const driverObjectId = new mongoose.Types.ObjectId(driverId);
+    const wallet = await DriverWallet.findOne({ driverId: driverObjectId });
+
+    if (!wallet) {
+      return res.status(404).json({ message: "Wallet not found." });
+    }
+
+    const today = new Date();
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+    const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+
+    const todayEarnings = wallet.transactions
+      .filter(tx => tx.type === "ride" && new Date(tx.createdAt) >= startOfDay)
+      .reduce((sum, tx) => sum + tx.amount, 0);
+
+    const weekEarnings = wallet.transactions
+      .filter(tx => tx.type === "ride" && new Date(tx.createdAt) >= startOfWeek)
+      .reduce((sum, tx) => sum + tx.amount, 0);
+
+    res.json({
+      totalEarnings: wallet.totalEarnings,
+      totalWithdrawn: wallet.totalWithdrawn,
+      todayEarnings,
+      weekEarnings,
+      transactions: wallet.transactions.reverse(),
+    });
+  } catch (err) {
+    console.error("Wallet summary error:", err);
+    res.status(500).json({ message: "Error fetching wallet data." });
   }
 };
 
@@ -99,15 +104,23 @@ export const requestWithdrawal = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid driver ID" });
     }
 
-    const driverObjectId = new mongoose.Types.ObjectId(driverId.toString());
+    const driverObjectId = new mongoose.Types.ObjectId(driverId);
 
-    // Fetch wallet, create if it doesn't exist
+    // Fetch wallet or create it with earnings from pending payments
     let wallet = await DriverWallet.findOne({ driverId: driverObjectId });
     if (!wallet) {
+      // Calculate total earnings from pending Square payments
+      const payments = await SquarePaymentModel.find({
+        driverId: driverObjectId,
+        driverPaid: false,
+        paymentStatus: "paid",
+      });
+      const totalEarnings = payments.reduce((sum, p) => sum + p.driverAmount, 0);
+
       wallet = new DriverWallet({
         driverId: driverObjectId,
         transactions: [],
-        totalEarnings: 0,
+        totalEarnings,
         totalWithdrawn: 0,
       });
       await wallet.save();
