@@ -10,13 +10,22 @@ export const addRideTransaction = async ({
   amount,
   rideId = null,
   method = "card",
-  status,
+  status = "completed",
   type = "ride",
 }) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(driverId)) throw new Error("Invalid driverId");
+    // ✅ Validate inputs
+    if (!mongoose.Types.ObjectId.isValid(driverId)) {
+      throw new Error("Invalid driverId");
+    }
+
+    if (!amount || Number(amount) <= 0) {
+      throw new Error("Invalid amount");
+    }
+
     const driverObjectId = new mongoose.Types.ObjectId(driverId);
 
+    // ✅ Find or create wallet
     let wallet = await DriverWallet.findOne({ driverId: driverObjectId });
 
     if (!wallet) {
@@ -28,24 +37,34 @@ export const addRideTransaction = async ({
       });
     }
 
-    wallet.transactions.push({
-      type,
+    // ✅ Create transaction
+    const transaction = {
+      type,                     // ride | withdrawal
       rideId,
       amount,
-      method,
-      status,
+      method,                   // card | cash | withdrawal
+      status,                   // completed | pending | approved | rejected
       createdAt: new Date(),
-    });
+    };
 
-    if (type === "ride") {
+    wallet.transactions.push(transaction);
+
+    // ✅ Wallet balance logic
+    if (type === "ride" && status === "completed") {
       wallet.totalEarnings += amount;
     }
 
+    if (type === "withdrawal" && status === "approved") {
+      wallet.totalWithdrawn += amount;
+    }
+
     await wallet.save();
-    console.log("Transaction added:", wallet.transactions[wallet.transactions.length - 1]);
-  } catch (err) {
-    console.error("Add ride transaction error:", err);
-    throw err;
+
+    console.log("Wallet transaction added:", transaction);
+    return transaction;
+  } catch (error) {
+    console.error("addRideTransaction error:", error.message);
+    throw error;
   }
 };
 
