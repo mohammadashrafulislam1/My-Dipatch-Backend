@@ -132,7 +132,7 @@ export const requestWithdrawal = async (req, res) => {
       .reduce((sum, tx) => sum + tx.amount, 0);
 
     const availableBalance = wallet.totalEarnings - wallet.totalWithdrawn - pendingWithdrawals;
-
+    console.log("amount", amount, "availableBalance", availableBalance)
     if (amount > availableBalance) {
       return res.status(400).json({ success: false, message: "Insufficient balance" });
     }
