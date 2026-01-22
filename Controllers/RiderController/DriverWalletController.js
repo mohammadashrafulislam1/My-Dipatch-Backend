@@ -167,7 +167,7 @@ export const requestWithdrawal = async (req, res) => {
       driverId,
       amount,
       rideId: null,
-      method: "withdrawal",
+      method: "bank",
       status: "pending",
       type: "withdrawal",
     });
