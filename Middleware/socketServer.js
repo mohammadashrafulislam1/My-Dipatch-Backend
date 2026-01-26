@@ -4,6 +4,7 @@ import { ChatMessage } from "../Model/ChatMessage.js";
 import { RideModel } from "../Model/CustomerModel/Ride.js";
 import { startPendingRideNotifier } from "./startPendingRideNotifier.js";
 import { Notification } from "../Model/Notification.js";
+import { initNotificationSocket } from "./notification.socket.js";
 
 let io;
 
@@ -61,44 +62,44 @@ const saveNotification = async (userId, userRole, title, message, type = 'system
  * Notify all online drivers about new ride request
  * @param {object} ride - Ride object
  */
-export const notifyDriversOfNewRide = async (ride) => {
-  try {
-    if (!io) return;
+// export const notifyDriversOfNewRide = async (ride) => {
+//   try {
+//     if (!io) return;
     
-    // Get all online drivers
-    const drivers = Object.keys(onlineUsers).filter(
-      userId => onlineUsers[userId].role === 'driver'
-    );
+//     // Get all online drivers
+//     const drivers = Object.keys(onlineUsers).filter(
+//       userId => onlineUsers[userId].role === 'driver'
+//     );
     
-    console.log(`Notifying ${drivers.length} drivers about new ride ${ride._id}`);
+//     console.log(`Notifying ${drivers.length} drivers about new ride ${ride._id}`);
     
-    drivers.forEach(async (driverId) => {
-      try {
-        // Emit socket event
-        io.to(driverId).emit('new-ride-request', ride);
+//     drivers.forEach(async (driverId) => {
+//       try {
+//         // Emit socket event
+//         io.to(driverId).emit('new-ride-request', ride);
         
-        // Save notification for driver
-        await saveNotification(
-          driverId,
-          'driver',
-          '🚗 New Ride Request',
-          `New ride request from ${ride.pickup?.address || 'unknown location'} - Fare: $${ride.fare || 0}`,
-          'ride_request',
-          ride._id,
-          { 
-            pickup: ride.pickup, 
-            fare: ride.fare,
-            distance: ride.distance
-          }
-        );
-      } catch (err) {
-        console.error(`Error notifying driver ${driverId}:`, err);
-      }
-    });
-  } catch (error) {
-    console.error('Error in notifyDriversOfNewRide:', error);
-  }
-};
+//         // Save notification for driver
+//         await saveNotification(
+//           driverId,
+//           'driver',
+//           '🚗 New Ride Request',
+//           `New ride request from ${ride.pickup?.address || 'unknown location'} - Fare: $${ride.fare || 0}`,
+//           'ride_request',
+//           ride._id,
+//           { 
+//             pickup: ride.pickup, 
+//             fare: ride.fare,
+//             distance: ride.distance
+//           }
+//         );
+//       } catch (err) {
+//         console.error(`Error notifying driver ${driverId}:`, err);
+//       }
+//     });
+//   } catch (error) {
+//     console.error('Error in notifyDriversOfNewRide:', error);
+//   }
+// };
 
 export const initSocket = (server) => {
   io = new SocketServer(server, {
@@ -110,6 +111,8 @@ export const initSocket = (server) => {
   });
   startPendingRideNotifier(io);
 
+  // 🔥 INIT notification socket
+  initNotificationSocket(io);
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
 

@@ -1,4 +1,5 @@
 import { RideModel } from "../../Model/CustomerModel/Ride.js";
+import { createNotification } from "../notification.service.js";
 
 
 // Get available ride requests (for driver to view and accept)
@@ -40,7 +41,25 @@ export const acceptRide = async (req, res) => {
         driverId,
       });
     }
+    await createNotification({
+    userIds: [customerId],
+    userRole: "customer",
+    title: "✅ Ride Accepted",
+    message: "Your ride has been accepted. Driver is on the way!",
+    type: "ride_accepted",
+    rideId,
+    metadata: { driverId }
+  });
 
+  await createNotification({
+    userIds: [driverId],
+    userRole: "driver",
+    title: "🚗 Ride Assigned",
+    message: "You have been assigned a new ride.",
+    type: "ride_assigned",
+    rideId,
+    metadata: { customerId }
+  });
     res.status(200).json({ message: "Ride accepted successfully.", ride });
   } catch (err) {
     console.error("Error accepting ride:", err);
