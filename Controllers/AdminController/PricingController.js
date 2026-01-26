@@ -1,4 +1,6 @@
 import { PricingModel } from "../../Model/AdminModel/Pricing.js";
+import { UserModel } from "../../Model/User.js";
+import { createNotification } from "../NotificationController.js";
 
 
 // Get current pricing settings
@@ -48,6 +50,18 @@ export const updatePricingSettings = async (req, res) => {
       adminCommission: settings.adminCommission,
       commissionPerDollar: (settings.adminCommission / 100).toFixed(2)
     });
+
+    const drivers = await UserModel.find({ role: "driver" }, "_id"); // only select _id
+const driverIds = drivers.map(driver => driver._id);
+await createNotification({
+  userIds: driverIds,
+  userRole: "driver",
+  title: "Pricing Updated",
+  message: `Admin has updated the pricing. New price per km: $${settings.pricePerKm}, Admin Commission: ${settings.adminCommission}%`,
+  type: "system",
+  metadata: { pricePerKm: settings.pricePerKm, adminCommission: settings.adminCommission }
+});
+
   } catch (err) {
     console.error("Error updating pricing:", err);
     res.status(500).json({ message: "Failed to update pricing settings" });
