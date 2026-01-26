@@ -3,6 +3,8 @@ import { AdminNotificationModel } from "../../Model/AdminModel/AdminNotification
 import { DriverSquareAccount } from "../../Model/DriverModel/DriverSquareAccount.js";
 import { DriverWallet } from "../../Model/DriverModel/DriverWallet.js";
 import { SquarePaymentModel } from "../../Model/SquarePayment.js";
+import { createNotification } from "../NotificationController.js";
+import { emitNotificationToRole } from "../../Middleware/notification.socket.js";
 
 // Helper: add ride or withdrawal transaction to wallet
 export const addRideTransaction = async ({
@@ -110,6 +112,7 @@ export const getWalletSummary = async (req, res) => {
 };
 
 // Request withdrawal
+
 export const requestWithdrawal = async (req, res) => {
   try {
     const driverId = req.user.id; // from JWT
@@ -125,10 +128,9 @@ export const requestWithdrawal = async (req, res) => {
 
     const driverObjectId = new mongoose.Types.ObjectId(driverId);
 
-    // Fetch wallet or create it with earnings from pending payments
+    // Fetch wallet or create it
     let wallet = await DriverWallet.findOne({ driverId: driverObjectId });
     if (!wallet) {
-      // Calculate total earnings from pending Square payments
       const payments = await SquarePaymentModel.find({
         driverId: driverObjectId,
         driverPaid: false,
@@ -145,25 +147,22 @@ export const requestWithdrawal = async (req, res) => {
       await wallet.save();
     }
 
-    // Calculate available balance
     const pendingWithdrawals = wallet.transactions
       .filter(tx => tx.type === "withdrawal" && tx.status === "pending")
       .reduce((sum, tx) => sum + tx.amount, 0);
 
     const availableBalance = wallet.totalEarnings - wallet.totalWithdrawn - pendingWithdrawals;
-    console.log("amount", amount, "availableBalance", availableBalance)
     if (amount > availableBalance) {
       return res.status(400).json({ success: false, message: "Insufficient balance" });
     }
 
-    // Get driver bank info
     const bankAccount = await DriverSquareAccount.findOne({ driverId: driverObjectId });
     if (!bankAccount) {
       return res.status(404).json({ success: false, message: "No bank account found" });
     }
 
     // Add pending withdrawal to wallet
-    await addRideTransaction({
+    const transaction = await addRideTransaction({
       driverId,
       amount,
       rideId: null,
@@ -172,8 +171,8 @@ export const requestWithdrawal = async (req, res) => {
       type: "withdrawal",
     });
 
-    // Notify admin
-    await AdminNotificationModel.create({
+    // Save notification in DB
+    const adminNotification = await AdminNotificationModel.create({
       type: "withdrawal_request",
       driverId: driverObjectId,
       amount,
@@ -186,9 +185,20 @@ export const requestWithdrawal = async (req, res) => {
       createdAt: new Date(),
     });
 
+    // ✅ Emit real-time notification to admins
+    emitNotificationToRole("admin", "withdrawal-request", {
+      notificationId: adminNotification._id,
+      driverId,
+      amount,
+      bankAccount: adminNotification.bankAccount,
+      status: "pending",
+      createdAt: adminNotification.createdAt,
+    });
+
     return res.json({ success: true, message: "Withdrawal request sent to admin!" });
   } catch (err) {
     console.error("requestWithdrawal error:", err);
     return res.status(500).json({ success: false, message: err.message });
   }
 };
+

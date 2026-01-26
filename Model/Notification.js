@@ -50,7 +50,11 @@ const notificationSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
-
+// 🚀 Prevent duplicates
+notificationSchema.index(
+  { userId: 1, type: 1, rideId: 1 },
+  { unique: true, partialFilterExpression: { rideId: { $ne: null } } }
+);
 notificationSchema.index({ userId: 1, read: 1 });
 notificationSchema.index({ createdAt: -1 });
 

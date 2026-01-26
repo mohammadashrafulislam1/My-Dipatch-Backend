@@ -27,35 +27,6 @@ console.log(onlineUsers);
  * @param {string} rideId - Related ride ID (optional)
  * @param {object} metadata - Additional data (optional)
  */
-const saveNotification = async (userId, userRole, title, message, type = 'system', rideId = null, metadata = {}) => {
-  try {
-    if (!userId || !userRole) return;
-    
-    const notification = new Notification({
-      userId,
-      userRole,
-      title,
-      message,
-      type,
-      rideId,
-      metadata,
-      read: false
-    });
-    
-    await notification.save();
-    
-    // Emit to the specific user if they're online
-    const userSocket = onlineUsers[userId];
-    if (userSocket && io) {
-      io.to(userSocket.socketId).emit('new-notification', notification);
-      console.log(`Notification sent to ${userRole} [${userId}]: ${title}`);
-    }
-    
-    return notification;
-  } catch (error) {
-    console.error('Error saving notification:', error);
-  }
-};
 
 // ========== ADD THIS FUNCTION ==========
 /**
@@ -159,16 +130,6 @@ socket.on("support-message", async ({ senderId, senderRole, recipientId, message
     io.to(recipientId).emit("support-message", newMsg);
     io.to(senderId).emit("support-message", newMsg);
 
-    // 🔔 Optional notification
-    await saveNotification(
-      recipientId,
-      "admin",
-      "💬 New Support Message",
-      message.slice(0, 50),
-      "support_chat",
-      null,
-      { senderId }
-    );
   } catch (err) {
     console.error("Support socket error:", err);
   }
@@ -185,53 +146,6 @@ socket.on("support-message", async ({ senderId, senderRole, recipientId, message
       console.log(`${role} [${userId}] joined socket room(s)`);
 
       // ========== ADD NOTIFICATIONS FOR ALL ROLES ==========
-      
-      // For DRIVERS: Send all pending rides on connect
-      if (role === "driver") {
-        const pendingRides = await RideModel.find({ status: "pending" });
-        pendingRides.forEach(async (ride) => {
-          io.to(userId).emit("new-ride-request", ride);
-          
-          // Save notification for this specific driver
-          await saveNotification(
-            userId,
-            'driver',
-            '🚗 New Ride Request',
-            `New ride request from ${ride.pickup?.address || 'unknown location'}`,
-            'ride_request',
-            ride._id,
-            { pickup: ride.pickup, fare: ride.fare }
-          );
-        });
-      }
-      
-      // For ADMINS: Notify about new driver online
-      if (role === "admin") {
-        // You can add admin-specific notifications here
-        console.log(`Admin ${userId} is now online`);
-      }
-      
-      // For CUSTOMERS: Check for any active rides with updates
-      if (role === "customer") {
-        // Check if customer has any active rides
-        const activeCustomerRides = await RideModel.find({ 
-          customerId: userId, 
-          status: { $in: ['accepted', 'ongoing'] } 
-        });
-        
-        if (activeCustomerRides.length > 0) {
-          // Send notification about active rides
-          await saveNotification(
-            userId,
-            'customer',
-            '📱 Active Rides',
-            `You have ${activeCustomerRides.length} active ride(s)`,
-            'system',
-            null,
-            { activeRides: activeCustomerRides.length }
-          );
-        }
-      }
     });
 
     // Driver accepts a ride -> notify customer
@@ -246,47 +160,7 @@ socket.on("support-message", async ({ senderId, senderRole, recipientId, message
             driverId,
             message: "Your ride has been accepted! Driver is on the way."
           });
-          
-          // ========== SAVE NOTIFICATIONS ==========
-          
-          // 1. Notification for CUSTOMER
-          await saveNotification(
-            customerId,
-            'customer',
-            '✅ Ride Accepted',
-            'Your ride has been accepted! Driver is on the way.',
-            'ride_accepted',
-            rideId,
-            { driverId, status: 'accepted' }
-          );
-          
-          // 2. Notification for DRIVER (confirmation)
-          await saveNotification(
-            driverId,
-            'driver',
-            '✅ Ride Assigned',
-            'You have accepted a ride request. Head to pickup location.',
-            'ride_assigned',
-            rideId,
-            { customerId, status: 'accepted' }
-          );
-          
-          // 3. Optional: Notification for ADMIN (if you want admins to track)
-          const admins = Object.keys(onlineUsers).filter(
-            userId => onlineUsers[userId].role === 'admin'
-          );
-          admins.forEach(async (adminId) => {
-            await saveNotification(
-              adminId,
-              'admin',
-              '📝 Ride Status Update',
-              `Driver ${driverId} accepted ride ${rideId}`,
-              'ride_update',
-              rideId,
-              { driverId, customerId, status: 'accepted' }
-            );
-          });
-          
+  
           // Also join the ride room for location updates
           socket.join(rideId);
           socket.join(`ride-${rideId}`);
@@ -319,23 +193,6 @@ socket.on("support-message", async ({ senderId, senderRole, recipientId, message
                 location: driverLocations[driverId]
               });
               
-              // ========== LOCATION UPDATE NOTIFICATION ==========
-              // Only send occasional notifications, not every location update
-              const lastLocationUpdate = driverLocations[driverId]?.timestamp;
-              const now = Date.now();
-              
-              // Send notification every 5 minutes (300000 ms) or for significant distance
-              if (!lastLocationUpdate || (now - lastLocationUpdate) > 300000) {
-                await saveNotification(
-                  customerId,
-                  'customer',
-                  '📍 Driver Location',
-                  `Driver is at ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`,
-                  'driver_location',
-                  rideId,
-                  { driverId, location, timestamp: now }
-                );
-              }
             }
           }).catch(err => console.error("Error finding ride:", err));
         }
@@ -380,23 +237,7 @@ socket.on("support-message", async ({ senderId, senderRole, recipientId, message
     socket.on("driver-location-stop", async ({ driverId }) => {
       try {
         const rideId = activeRides[driverId];
-        
-        // Find customer for this ride
-        if (rideId) {
-          const rideData = await RideModel.findById(rideId);
-          if (rideData && rideData.customerId) {
-            // Send notification to customer
-            await saveNotification(
-              rideData.customerId,
-              'customer',
-              '⚠️ Driver Stopped Sharing',
-              'Driver has stopped sharing location updates',
-              'driver_offline',
-              rideId,
-              { driverId, status: 'location_stopped' }
-            );
-          }
-        }
+       
         
         delete driverLocations[driverId];
         delete activeRides[driverId];
@@ -442,46 +283,11 @@ socket.on("support-message", async ({ senderId, senderRole, recipientId, message
           if (role === "driver") {
             const rideId = activeRides[userId];
             
-            // Find customer for active ride and notify them
-            if (rideId) {
-              try {
-                const rideData = await RideModel.findById(rideId);
-                if (rideData && rideData.customerId) {
-                  await saveNotification(
-                    rideData.customerId,
-                    'customer',
-                    '⚠️ Driver Disconnected',
-                    'Driver has gone offline. Your ride may be affected.',
-                    'driver_offline',
-                    rideId,
-                    { driverId: userId, status: 'driver_disconnected' }
-                  );
-                }
-              } catch (err) {
-                console.error('Error notifying customer of driver disconnect:', err);
-              }
-            }
             
             delete driverLocations[userId];
             delete activeRides[userId];
             io.emit("driver-location-disconnected", { driverId: userId });
           }
-          
-          // Optional: Notify admins about user disconnection
-          const admins = Object.keys(onlineUsers).filter(
-            id => onlineUsers[id].role === 'admin'
-          );
-          admins.forEach(async (adminId) => {
-            await saveNotification(
-              adminId,
-              'admin',
-              '👤 User Offline',
-              `${role} [${userId}] has disconnected`,
-              'user_status',
-              null,
-              { userId, role, status: 'offline' }
-            );
-          });
           
           delete onlineUsers[userId];
           break;

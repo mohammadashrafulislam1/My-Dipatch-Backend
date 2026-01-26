@@ -4,6 +4,7 @@ import { SquarePaymentModel } from "../Model/SquarePayment.js";
 import { SquarePaymentService } from "../services/SquarePaymentService.js";
 import { addRideTransaction } from "./RiderController/DriverWalletController.js";
 import { payoutsApi } from "../config/square.js";
+import { createNotification } from "./NotificationController.js";
 
 export class SquarePaymentController {
 
@@ -66,7 +67,15 @@ export class SquarePaymentController {
         rideId,
         method: "square",
       });
-
+// ✅ Notify driver
+await createNotification({
+  userIds: [driverId],
+  userRole: "driver",
+  title: "Payment Received",
+  message: `You have received $${payment.driverAmount} for ride ${rideId}`,
+  type: "payment",
+  rideId,
+});
       res.json({ success: true, message: "Driver paid" });
     } catch (err) {
       console.error("markDriverPaid error:", err);
@@ -244,7 +253,15 @@ static async saveSquarePayout(req, res) {
 
     await newBankAccount.save();
 
-    res.json({ success: true, message: "Bank account saved successfully", bankAccount: newBankAccount });
+    res.json({ success: true, message: "Bank account saved successfully", bankAccount: newBankAccount });// ✅ Notify driver
+await createNotification({
+  userIds: [driverId],
+  userRole: "driver",
+  title: "Bank Account Added",
+  message: `Your bank account ${bankName} ending with ${accountNumber.slice(-4)} was added successfully.`,
+  type: "bank_account",
+  rideId: null,
+});
   } catch (err) {
     console.error("saveSquarePayout error:", err);
     res.status(500).json({ success: false, message: err.message });
@@ -303,7 +320,15 @@ static async saveSquarePayout(req, res) {
         method: "bank_withdrawal",
         rideId: null,
       });
-
+// ✅ Notify driver
+await createNotification({
+  userIds: [driverId],
+  userRole: "driver",
+  title: "Bank Withdrawal Successful",
+  message: `You have successfully withdrawn $${amount} to your bank account.`,
+  type: "withdrawal",
+  rideId: null,
+});
       res.json({ success: true, message: "Withdrawal successful", payout: payoutResult });
     } catch (err) {
       console.error("Withdraw error:", err);

@@ -4,6 +4,7 @@ import { cloudinary } from "../utils/cloudinary.js";
 import { ChatMessage } from "../Model/ChatMessage.js";
 import { UserModel } from "../Model/User.js";
 import { RideModel } from "../Model/CustomerModel/Ride.js";
+import { createNotification } from "./NotificationController.js";
 
 // Cloudinary uploader
 const uploadImageToCloudinary = async (filePath) => {
@@ -118,7 +119,16 @@ export const sendChatMessage = async (req, res) => {
       if (req.io) {
         req.io.to(rUser._id.toString()).emit("chat-message", newMsg);
         req.io.to(senderId).emit("chat-message", newMsg);
+        
       }
+await createNotification({
+  userIds: [rUser._id.toString()],
+  userRole: rUser.role,
+  title: "New Chat Message",
+  message: `New message from ${senderRole}`,
+  type: "chat",
+  rideId: ride ? ride._id : null,
+});
 
       messagesToSend.push(newMsg);
     }
@@ -430,6 +440,14 @@ export const sendSupportMessage = async (req, res) => {
         req.io.to(admin._id.toString()).emit("support-message", msg);
         req.io.to(senderId).emit("support-message", msg);
       }
+await createNotification({
+  userIds: [admin._id.toString()],
+  userRole: "admin",
+  title: "New Support Message",
+  message: `Support message from ${senderRole}`,
+  type: "support",
+  rideId: null,
+});
 
       messages.push(msg);
     }

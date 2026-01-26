@@ -6,6 +6,7 @@ import { WalletTransaction } from "../../Model/CustomerModel/WalletTransaction.j
 import { UserModel } from "../../Model/User.js";
 import { createTransaction } from "../AdminController/WalletController.js";
 import { PricingModel } from "../../Model/AdminModel/Pricing.js";
+import { createNotification } from "../NotificationController.js";
 
 // Create a new ride request
 export const requestRide = async (req, res) => {
@@ -110,6 +111,8 @@ setTimeout(async () => {
     console.error("Auto-delete ride error:", err);
   }
 }, 10 * 60 * 1000); // 10 minutes in milliseconds
+
+
     // Socket emit to active drivers
     if (req.io) {
       const activeDrivers = await UserModel.find({
@@ -117,11 +120,21 @@ setTimeout(async () => {
         status: "active",
       });
 
-      activeDrivers.forEach((driver) => {
-        const userId = driver._id.toString();
-        if (onlineUsers[userId]) {
-          req.io.to(userId).emit("new-ride-request", newRide);
-        }
+      activeDrivers.forEach(async (driver) => {
+  const userId = driver._id.toString();
+  if (onlineUsers[userId]) {
+    req.io.to(userId).emit("new-ride-request", newRide);
+
+    // 🔔 Send notification
+    await createNotification({
+      userIds: [userId],
+      userRole: "driver",
+      title: "New Ride Request",
+      message: `A new ride has been requested from ${pickup.address} to ${dropoff.address}.`,
+      type: "ride",
+      rideId: newRide._id,
+    });
+  }
       });
     }
 
@@ -217,6 +230,49 @@ console.log("Updating timestamps:", ride.timestamps);
     // Notify customer via socket
     if (req.io) {
       req.io.to(ride.customerId.toString()).emit("ride-status-update", ride);
+
+       // 🔔 Notification to customer
+  let statusMessage = "";
+  switch (status) {
+    case "accepted":
+      statusMessage = "Your ride has been accepted by a driver.";
+      break;
+    case "on_the_way":
+      statusMessage = "Driver is on the way to pick you up.";
+      break;
+    case "in_progress":
+      statusMessage = "Your ride is in progress.";
+      break;
+    case "completed":
+      statusMessage = "Your ride has been completed.";
+      break;
+    case "cancelled":
+      statusMessage = "Your ride has been cancelled.";
+      break;
+  }
+
+  await createNotification({
+    userIds: [ride.customerId.toString()],
+    userRole: "customer",
+    title: "Ride Update",
+    message: statusMessage,
+    type: "ride",
+    rideId: ride._id,
+  });
+
+  if (status === "completed") {
+  const admins = await UserModel.find({ role: "admin" });
+  const adminIds = admins.map((admin) => admin._id.toString());
+
+  await createNotification({
+    userIds: adminIds,
+    userRole: "admin",
+    title: "Ride Completed",
+    message: `Ride ${ride._id} has been completed.`,
+    type: "ride",
+    rideId: ride._id,
+  });
+}
     }
 
     res.json(ride);
