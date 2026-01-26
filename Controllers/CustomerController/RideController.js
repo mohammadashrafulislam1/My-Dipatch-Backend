@@ -98,7 +98,18 @@ export const requestRide = async (req, res) => {
     });
 
     await newRide.save();
-
+// Schedule automatic deletion
+setTimeout(async () => {
+  try {
+    const ride = await RideModel.findById(newRide._id);
+    if (ride && !ride.isPaid) {
+      await RideModel.findByIdAndDelete(newRide._id);
+      console.log(`Ride ${newRide._id} auto-deleted (unpaid)`);
+    }
+  } catch (err) {
+    console.error("Auto-delete ride error:", err);
+  }
+}, 10 * 60 * 1000); // 10 minutes in milliseconds
     // Socket emit to active drivers
     if (req.io) {
       const activeDrivers = await UserModel.find({
