@@ -1,5 +1,5 @@
 import { RideModel } from "../../Model/CustomerModel/Ride.js";
-import { createNotification } from "../notification.service.js";
+import { createNotification } from "../NotificationController.js";
 
 
 // Get available ride requests (for driver to view and accept)
