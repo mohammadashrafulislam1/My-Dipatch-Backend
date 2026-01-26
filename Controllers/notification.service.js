@@ -1,10 +1,6 @@
-// services/notification.service.js
-import { Notification } from "../Model/Notification.js";
-import {
-  emitNotificationToUser,
-  emitNotificationToUsers
-} from "../sockets/notification.socket.js";
 
+import { emitNotificationToUser, emitNotificationToUsers } from "../Middleware/notification.socket.js";
+import { Notification } from "../Model/Notification.js";
 export const createNotification = async ({
   userIds = [],          // array (supports multi-user)
   userRole,
