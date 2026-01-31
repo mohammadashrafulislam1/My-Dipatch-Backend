@@ -9,22 +9,31 @@ export const saveUserCard = async (req, res) => {
   try {
     const userId = req.user.id;
     const { cardToken } = req.body;
+
     const user = await UserModel.findById(userId);
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
     const squareCustomerId = await createSquareCustomerIfNotExists(user);
 
-    const { result } = await cardsApi.create({
-      idempotencyKey: crypto.randomUUID(),
-      sourceId: cardToken,
-      card: {
-        cardholderName: user.firstName + " " + user.lastName,
-        customerId: squareCustomerId,
-      },
-    });
+    // Create card with Square
+    let card;
+    try {
+      const response = await cardsApi.create({
+        idempotencyKey: crypto.randomUUID(),
+        sourceId: cardToken,
+        card: {
+          cardholderName: `${user.firstName} ${user.lastName}`,
+          customerId: squareCustomerId,
+        },
+      });
+      card = response.result?.card;
+      if (!card) throw new Error("Card creation failed. No card returned.");
+    } catch (err) {
+      console.error("Square card creation failed:", err);
+      return res.status(400).json({ success: false, message: err.message });
+    }
 
-    const card = result.card;
-
+    // Save card info in MongoDB
     user.savedCards.push({
       squareCardId: card.id,
       last4: card.last4,
@@ -38,6 +47,7 @@ export const saveUserCard = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
 export const payWithSavedCard = async (req, res) => {
   try {
     const userId = req.user.id;
