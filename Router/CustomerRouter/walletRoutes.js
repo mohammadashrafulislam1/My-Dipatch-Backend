@@ -5,7 +5,7 @@ import { verifyToken } from "../../Middleware/jwt.js";
 
 export const walletRouter = express.Router();
 walletRouter.post("/save-card", saveUserCard);
-router.post("/pay-with-saved-card", verifyToken(), payWithSavedCard);
+walletRouter.post("/pay-with-saved-card", verifyToken(), payWithSavedCard);
 
 walletRouter.post("/add", addMoney);
 walletRouter.post("/withdraw", withdrawMoney);
