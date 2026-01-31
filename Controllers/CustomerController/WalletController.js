@@ -14,7 +14,7 @@ export const saveUserCard = async (req, res) => {
 
     const squareCustomerId = await createSquareCustomerIfNotExists(user);
 
-    const { result } = await cardsApi.createCard({
+    const { result } = await cardsApi.create({
       idempotencyKey: crypto.randomUUID(),
       sourceId: cardToken,
       card: {
