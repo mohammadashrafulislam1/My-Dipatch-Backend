@@ -3,7 +3,7 @@ import { DriverSquareAccount } from "../Model/DriverModel/DriverSquareAccount.js
 import { SquarePaymentModel } from "../Model/SquarePayment.js";
 import { SquarePaymentService } from "../services/SquarePaymentService.js";
 import { addRideTransaction } from "./RiderController/DriverWalletController.js";
-import { payoutsApi } from "../config/square.js";
+import { customersApi, payoutsApi } from "../config/square.js";
 import { createNotification } from "./NotificationController.js";
 
 export class SquarePaymentController {
@@ -336,3 +336,19 @@ await createNotification({
     }
   }
 }
+export const createSquareCustomerIfNotExists = async (user) => {
+  if (user.squareCustomerId) return user.squareCustomerId;
+
+  const response = await customersApi.create({
+    givenName: user.firstName,
+    familyName: user.lastName,
+    emailAddress: user.email,
+    phoneNumber: user.phone,
+  });
+
+  const squareCustomerId = response.customer.id;
+  user.squareCustomerId = squareCustomerId;
+  await user.save();
+
+  return squareCustomerId;
+};

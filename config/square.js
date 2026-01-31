@@ -31,5 +31,6 @@ export const payoutsApi = squareClient.payouts;
 export const customersApi = squareClient.customers;
 export const webhookSubscriptionsApi = squareClient.webhookSubscriptions;
 export const bankAccountsApi = squareClient.bankAccounts;
+export const cardsApi = squareClient.cards;
 // 
 export default squareClient;

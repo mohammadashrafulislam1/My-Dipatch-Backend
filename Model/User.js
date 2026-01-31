@@ -64,6 +64,17 @@ const userSchema = new mongoose.Schema({
     postalCode: { type: String },
     country: { type: String, default: "CA" },
   },
-  }, { timestamps: true });
+  // 💳 Square integration
+squareCustomerId: { type: String }, // stores the Square Customer ID
+savedCards: [
+  {
+    squareCardId: { type: String },  // token for future charges
+    last4: { type: String },         // last 4 digits
+    brand: { type: String },         // Visa, MasterCard, etc.
+    createdAt: { type: Date, default: Date.now },
+  }
+],
+  },
+   { timestamps: true });
   
 export const UserModel  = mongoose.model('User', userSchema);

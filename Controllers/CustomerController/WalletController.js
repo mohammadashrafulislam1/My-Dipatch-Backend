@@ -1,6 +1,43 @@
 import { WalletModel } from "../../Model/CustomerModel/Wallet.js";
 import { WalletTransaction } from "../../Model/CustomerModel/WalletTransaction.js";
+import crypto from "crypto";
+import { createSquareCustomerIfNotExists } from "../SquarePaymentController.js";
+import { UserModel } from "../../Model/User.js";
+import { cardsApi } from "../../config/square.js";
 
+export const saveUserCard = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { cardToken } = req.body;
+    const user = await UserModel.findById(userId);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    const squareCustomerId = await createSquareCustomerIfNotExists(user);
+
+    const { result } = await cardsApi.createCard({
+      idempotencyKey: crypto.randomUUID(),
+      sourceId: cardToken,
+      card: {
+        cardholderName: user.firstName + " " + user.lastName,
+        customerId: squareCustomerId,
+      },
+    });
+
+    const card = result.card;
+
+    user.savedCards.push({
+      squareCardId: card.id,
+      last4: card.last4,
+      brand: card.cardBrand,
+    });
+    await user.save();
+
+    res.json({ success: true, card });
+  } catch (err) {
+    console.error("Save card error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
 
 
 export const addMoney = async (req, res) => {
