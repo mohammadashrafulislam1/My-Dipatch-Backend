@@ -3,7 +3,7 @@ import { WalletTransaction } from "../../Model/CustomerModel/WalletTransaction.j
 import crypto from "crypto";
 import { createSquareCustomerIfNotExists } from "../SquarePaymentController.js";
 import { UserModel } from "../../Model/User.js";
-import { cardsApi } from "../../config/square.js";
+import { cardsApi, paymentsApi } from "../../config/square.js";
 
 export const saveUserCard = async (req, res) => {
   try {
@@ -38,7 +38,35 @@ export const saveUserCard = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+export const payWithSavedCard = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { cardId, amount, rideId } = req.body;
 
+    const user = await UserModel.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const card = user.savedCards.find(c => c.squareCardId === cardId);
+    if (!card) return res.status(400).json({ message: "Card not found" });
+
+    const payment = await paymentsApi.create({
+      idempotencyKey: crypto.randomUUID(),
+      sourceId: cardId, // 🔥 charge saved card
+      amountMoney: {
+        amount: Math.round(amount * 100),
+        currency: "CAD",
+      },
+      autocomplete: true,
+      referenceId: rideId,
+    });
+
+    res.json({ success: true, payment: payment.result.payment });
+
+  } catch (err) {
+    console.error("Saved card payment error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
 
 export const addMoney = async (req, res) => {
     const { userId, amount } = req.body;
