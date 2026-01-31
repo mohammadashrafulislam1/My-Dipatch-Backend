@@ -343,7 +343,7 @@ export const createSquareCustomerIfNotExists = async (user) => {
     givenName: user.firstName,
     familyName: user.lastName,
     emailAddress: user.email,
-    phoneNumber: user.phone,
+    // phoneNumber: user.phone,
   });
 
   const squareCustomerId = response.customer.id;
