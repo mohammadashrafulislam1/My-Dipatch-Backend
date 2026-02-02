@@ -131,3 +131,5 @@ export const addMoney = async (req, res) => {
     const transactions = await WalletTransaction.find({ userId }).sort({ createdAt: -1 });
     res.json(transactions);
   };
+
+

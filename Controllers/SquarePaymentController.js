@@ -338,13 +338,14 @@ await createNotification({
 }
 export const createSquareCustomerIfNotExists = async (user) => {
   if (user.squareCustomerId) return user.squareCustomerId;
-
+  console.log("user", user)
   const response = await customersApi.create({
     givenName: user.firstName,
     familyName: user.lastName,
     emailAddress: user.email,
     // phoneNumber: user.phone,
   });
+console.log("Square customer response:", response);
 
   const squareCustomerId = response.customer.id;
   user.squareCustomerId = squareCustomerId;
