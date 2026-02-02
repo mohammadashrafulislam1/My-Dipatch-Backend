@@ -5,6 +5,7 @@ import { DriverWallet } from "../../Model/DriverModel/DriverWallet.js";
 import { SquarePaymentModel } from "../../Model/SquarePayment.js";
 import { createNotification } from "../NotificationController.js";
 import { emitNotificationToRole } from "../../Middleware/notification.socket.js";
+import { UserModel } from "../../Model/User.js";
 
 // Helper: add ride or withdrawal transaction to wallet
 export const addRideTransaction = async ({
@@ -194,8 +195,25 @@ export const requestWithdrawal = async (req, res) => {
       status: "pending",
       createdAt: adminNotification.createdAt,
     });
+ // 🔔 Create in-app notifications for all admins
+const admins = await UserModel.find({ role: "admin" });
+
+await createNotification({
+  userIds: admins.map(a => a._id),
+  userRole: "admin",
+  title: "New Withdrawal Request",
+  message: `Driver requested withdrawal of $${amount}.`,
+  type: "withdrawal-request", // or "withdrawal_request" if you add to enum
+  metadata: {
+    driverId,
+    amount,
+    bankName: bankAccount.bankName,
+    accountNumber: bankAccount.accountNumber,
+  }
+});
 
     return res.json({ success: true, message: "Withdrawal request sent to admin!" });
+   
   } catch (err) {
     console.error("requestWithdrawal error:", err);
     return res.status(500).json({ success: false, message: err.message });

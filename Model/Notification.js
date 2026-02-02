@@ -31,7 +31,13 @@ const notificationSchema = new mongoose.Schema({
       'ride_update',
       'user_status',
       'system',
-      'chat'
+      'chat',
+      'payment',
+      'support',
+      'bank_account',
+      'withdrawal',
+      'withdrawal-request',
+
     ],
     default: 'system'
   },

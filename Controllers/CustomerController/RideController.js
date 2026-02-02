@@ -131,7 +131,7 @@ setTimeout(async () => {
       userRole: "driver",
       title: "New Ride Request",
       message: `A new ride has been requested from ${pickup.address} to ${dropoff.address}.`,
-      type: "ride",
+      type: "ride_request",
       rideId: newRide._id,
     });
   }
@@ -256,7 +256,7 @@ console.log("Updating timestamps:", ride.timestamps);
     userRole: "customer",
     title: "Ride Update",
     message: statusMessage,
-    type: "ride",
+    type: "ride_update",
     rideId: ride._id,
   });
 
@@ -269,7 +269,7 @@ console.log("Updating timestamps:", ride.timestamps);
     userRole: "admin",
     title: "Ride Completed",
     message: `Ride ${ride._id} has been completed.`,
-    type: "ride",
+    type: "ride_update",
     rideId: ride._id,
   });
 }
