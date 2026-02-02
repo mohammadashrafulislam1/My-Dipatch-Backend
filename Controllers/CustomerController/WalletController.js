@@ -91,7 +91,7 @@ const payment = await paymentsApi.create({
   referenceId: rideId,
 });
 
-
+console.log(payment)
     res.json({ success: true, payment: payment.result.payment });
 
   } catch (err) {
