@@ -42,7 +42,7 @@ driverSquareAccountId,
       };
 
      const response = await paymentsApi.create(paymentRequest);
-     console.log(response)
+     console.log("response", response)
 const payment = response.payment; // get payment directly
 
 if (!payment) {
