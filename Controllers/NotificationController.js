@@ -12,33 +12,60 @@ export const createNotification = async ({
   metadata = {}
 }) => {
   try {
-    if (!userIds.length) return;
+    console.log("🚀 createNotification called with:", {
+      userIds,
+      userRole,
+      title,
+      message,
+      type,
+      rideId,
+      metadata,
+    });
+
+    if (!userIds.length) {
+      console.log("⚠️ No userIds provided, skipping notifications");
+      return;
+    }
 
     const notifications = [];
 
     for (const userId of userIds) {
-      const notification = await Notification.create({
-        userId,
-        userRole,
-        title,
-        message,
-        type,
-        rideId,
-        metadata,
-        read: false
-      });
+      console.log(`Creating notification for userId: ${userId}`);
 
-      notifications.push(notification);
+      try {
+        const notification = await Notification.create({
+          userId,
+          userRole,
+          title,
+          message,
+          type,
+          rideId,
+          metadata,
+          read: false,
+        });
 
-      // 🔥 emit realtime
-      emitNotificationToUser(userId, "new-notification", notification);
+        console.log("✅ Notification saved:", notification);
+
+        notifications.push(notification);
+
+        // 🔥 emit realtime
+        console.log(`Emitting notification to user ${userId}`);
+        emitNotificationToUser(userId, "new-notification", notification);
+
+      } catch (innerErr) {
+        console.error(`❌ Failed to save notification for user ${userId}:`, innerErr);
+      }
     }
 
+    console.log("All notifications processed. Total saved:", notifications.length);
+
     return notifications;
+
   } catch (err) {
     console.error("Notification service error:", err);
   }
 };
+
 // Get notifications for a user
 export const getUserNotifications = async (req, res) => {
   try {
