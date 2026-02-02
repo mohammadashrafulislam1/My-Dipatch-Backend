@@ -50,7 +50,16 @@ export const saveUserCard = async (req, res) => {
     });
     await user.save();
 
-    res.json({ success: true, card });
+    // after card creation
+const sanitizedCard = {
+  ...card,
+  expMonth: Number(card.expMonth),
+  expYear: Number(card.expYear),
+  version: Number(card.version),
+};
+
+res.json({ success: true, card: sanitizedCard });
+
   } catch (err) {
     console.error("Save card error:", err);
     res.status(500).json({ success: false, message: err.message });
