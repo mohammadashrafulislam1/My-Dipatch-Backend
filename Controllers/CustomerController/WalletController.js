@@ -92,7 +92,7 @@ const payment = await paymentsApi.create({
 });
 
 console.log(payment)
-    res.json({ success: true, payment: payment.result.payment });
+    res.json({ success: true, payment: payment.result.payment ||  payment.payment });
 
   } catch (err) {
     console.error("Saved card payment error:", err);
