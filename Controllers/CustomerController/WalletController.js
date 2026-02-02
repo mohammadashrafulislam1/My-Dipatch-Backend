@@ -77,16 +77,20 @@ export const payWithSavedCard = async (req, res) => {
     const card = user.savedCards.find(c => c.squareCardId === cardId);
     if (!card) return res.status(400).json({ message: "Card not found" });
 
-    const payment = await paymentsApi.create({
-      idempotencyKey: crypto.randomUUID(),
-      sourceId: cardId, // 🔥 charge saved card
-      amountMoney: {
-        amount: BigInt(Math.round(amount * 100)),
-        currency: "CAD",
-      },
-      autocomplete: true,
-      referenceId: rideId,
-    });
+    const squareCustomerId = await createSquareCustomerIfNotExists(user);
+
+const payment = await paymentsApi.create({
+  idempotencyKey: crypto.randomUUID(),
+  sourceId: cardId, // saved card on file
+  customerId: squareCustomerId, // 🔹 required for cards on file
+  amountMoney: {
+    amount: BigInt(Math.round(amount * 100)),
+    currency: "CAD",
+  },
+  autocomplete: true,
+  referenceId: rideId,
+});
+
 
     res.json({ success: true, payment: payment.result.payment });
 
