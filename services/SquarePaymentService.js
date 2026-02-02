@@ -16,8 +16,14 @@ export class SquarePaymentService {
     driverSquareAccountId
   }) {
     try {
-      const totalCents = Math.round(Number(totalAmount) * 100);
-      const adminCents = Math.round(Number(adminAmount) * 100);
+      const totalCents = Math.round(parseFloat(totalAmount) * 100);
+const adminCents = Math.round(parseFloat(adminAmount) * 100);
+     console.log("totalCents", totalCents)
+     console.log("adminCents", adminCents)
+
+if (isNaN(totalCents) || isNaN(adminCents)) {
+  throw new Error(`Invalid amounts → total: ${totalAmount}, admin: ${adminAmount}`);
+}
 
       const idempotencyKey = `ride-${rideId}-${uuidv4().slice(0, 8)}`;
 
@@ -40,6 +46,7 @@ driverSquareAccountId,
           type: 'ride_fare'
         },
       };
+     console.log("paymentRequest", paymentRequest)
 
      const response = await paymentsApi.create(paymentRequest);
      console.log("response", response)
