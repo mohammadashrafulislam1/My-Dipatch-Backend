@@ -34,7 +34,7 @@ export const saveUserCard = async (req, res) => {
     referenceId: user._id.toString(),
   },
 });
-
+  console.log(response)
       card = response.result?.card;
       if (!card) throw new Error("Card creation failed. No card returned.");
     } catch (err) {
