@@ -65,6 +65,17 @@ res.json({ success: true, card: sanitizedCard });
     res.status(500).json({ success: false, message: err.message });
   }
 };
+// Helper to recursively convert BigInt to number
+const convertBigIntToNumber = (obj) => {
+  if (typeof obj === "bigint") return Number(obj);
+  if (Array.isArray(obj)) return obj.map(convertBigIntToNumber);
+  if (obj && typeof obj === "object") {
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [k, convertBigIntToNumber(v)])
+    );
+  }
+  return obj;
+};
 
 export const payWithSavedCard = async (req, res) => {
   try {
@@ -93,7 +104,8 @@ const payment = await paymentsApi.create({
 
 console.log(payment)
 const paymentData = payment?.result?.payment || payment?.payment;
-    res.json({ success: true, payment: paymentData });
+const sanitizedPayment = convertBigIntToNumber(paymentData);
+    res.json({ success: true, payment: sanitizedPayment });
 
   } catch (err) {
     console.error("Saved card payment error:", err);
