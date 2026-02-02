@@ -35,7 +35,7 @@ export const saveUserCard = async (req, res) => {
   },
 });
   console.log(response)
-      card = response.result?.card;
+      card = response.result?.card || response?.card;
       if (!card) throw new Error("Card creation failed. No card returned.");
     } catch (err) {
       console.error("Square card creation failed:", err);
