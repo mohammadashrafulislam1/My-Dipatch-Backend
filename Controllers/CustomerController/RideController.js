@@ -124,17 +124,16 @@ setTimeout(async () => {
   const userId = driver._id.toString();
   if (onlineUsers[userId]) {
     req.io.to(userId).emit("new-ride-request", newRide);
-
-    // 🔔 Send notification
-    await createNotification({
-      userIds: [userId],
-      userRole: "driver",
-      title: "New Ride Request",
-      message: `A new ride has been requested from ${pickup.address} to ${dropoff.address}.`,
-      type: "ride_request",
-      rideId: newRide._id,
-    });
   }
+   // 🔹 Create notification for ALL drivers, online or offline
+  await createNotification({
+    userIds: [userId],
+    userRole: "driver",
+    title: "New Ride Request",
+    message: `A new ride has been requested from ${pickup.address} to ${dropoff.address}.`,
+    type: "ride_request",
+    rideId: newRide._id,
+  });
       });
     }
 
