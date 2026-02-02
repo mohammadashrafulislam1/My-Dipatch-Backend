@@ -81,7 +81,7 @@ export const payWithSavedCard = async (req, res) => {
       idempotencyKey: crypto.randomUUID(),
       sourceId: cardId, // 🔥 charge saved card
       amountMoney: {
-        amount: Math.round(amount * 100),
+        amount: BigInt(Math.round(amount * 100)),
         currency: "CAD",
       },
       autocomplete: true,
