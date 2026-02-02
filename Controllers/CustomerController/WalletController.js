@@ -18,14 +18,23 @@ export const saveUserCard = async (req, res) => {
     // Create card with Square
     let card;
     try {
-      const response = await cardsApi.create({
-        idempotencyKey: crypto.randomUUID(),
-        sourceId: cardToken,
-        card: {
-          cardholderName: `${user.firstName} ${user.lastName}`,
-          customerId: squareCustomerId,
-        },
-      });
+    const response = await cardsApi.create({
+  idempotencyKey: crypto.randomUUID(),
+  sourceId: cardToken,
+  card: {
+    customerId: squareCustomerId, // ✅ MUST be inside card
+    cardholderName: `${user.firstName} ${user.lastName}`,
+    billingAddress: {
+      addressLine1: "N/A",   // Square requires an object, can be minimal
+      locality: "N/A",
+      administrativeDistrictLevel1: "N/A",
+      postalCode: "00000",
+      country: "CA",
+    },
+    referenceId: user._id.toString(),
+  },
+});
+
       card = response.result?.card;
       if (!card) throw new Error("Card creation failed. No card returned.");
     } catch (err) {
