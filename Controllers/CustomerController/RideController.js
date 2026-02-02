@@ -19,8 +19,6 @@ export const requestRide = async (req, res) => {
       instructions,
     } = req.body;
 
-    console.log("📦 Ride request body:", req.body);
-
     if (!customerId || !pickup || !dropoff) {
       return res.status(400).json({ message: "Missing required fields." });
     }
@@ -125,6 +123,8 @@ setTimeout(async () => {
   if (onlineUsers[userId]) {
     req.io.to(userId).emit("new-ride-request", newRide);
   }
+  
+console.log("createNotification")
    // 🔹 Create notification for ALL drivers, online or offline
   await createNotification({
     userIds: [userId],

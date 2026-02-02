@@ -102,7 +102,6 @@ const payment = await paymentsApi.create({
   referenceId: rideId,
 });
 
-console.log(payment)
 const paymentData = payment?.result?.payment || payment?.payment;
 const sanitizedPayment = convertBigIntToNumber(paymentData);
     res.json({ success: true, payment: sanitizedPayment });
