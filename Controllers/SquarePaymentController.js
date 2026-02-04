@@ -1,10 +1,10 @@
 import crypto from "crypto";
 import { DriverSquareAccount } from "../Model/DriverModel/DriverSquareAccount.js";
 import { SquarePaymentModel } from "../Model/SquarePayment.js";
-import { SquarePaymentService } from "../services/SquarePaymentService.js";
 import { addRideTransaction } from "./RiderController/DriverWalletController.js";
 import { customersApi, payoutsApi } from "../config/square.js";
 import { createNotification } from "./NotificationController.js";
+import { SquarePaymentService } from "../services/SquarePaymentService.js";
 
 export class SquarePaymentController {
 

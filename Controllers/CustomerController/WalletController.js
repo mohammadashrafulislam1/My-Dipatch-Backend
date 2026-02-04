@@ -80,7 +80,11 @@ const convertBigIntToNumber = (obj) => {
 export const payWithSavedCard = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { cardId, amount, rideId } = req.body;
+    const { cardId, rideId, totalAmount, driverAmount, adminAmount } = req.body;
+
+    if (!cardId || !rideId || !totalAmount || !driverAmount || !adminAmount) {
+      return res.status(400).json({ success: false, message: "Missing fields" });
+    }
 
     const user = await UserModel.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -88,23 +92,24 @@ export const payWithSavedCard = async (req, res) => {
     const card = user.savedCards.find(c => c.squareCardId === cardId);
     if (!card) return res.status(400).json({ message: "Card not found" });
 
+    // Ensure Square customer exists
     const squareCustomerId = await createSquareCustomerIfNotExists(user);
 
-const payment = await paymentsApi.create({
-  idempotencyKey: crypto.randomUUID(),
-  sourceId: cardId, // saved card on file
-  customerId: squareCustomerId, // 🔹 required for cards on file
-  amountMoney: {
-    amount: BigInt(Math.round(amount * 100)),
-    currency: "CAD",
-  },
-  autocomplete: true,
-  referenceId: rideId,
-});
+    // 🚀 USE SAME SERVICE AS NORMAL PAYMENT
+    const paymentResult = await SquarePaymentService.processRidePayment({
+      sourceId: card.squareCardId,        // saved card on file
+      rideId,
+      customerId: squareCustomerId,
+      totalAmount: parseFloat(totalAmount),
+      driverAmount: parseFloat(driverAmount),
+      adminAmount: parseFloat(adminAmount),
+    });
 
-const paymentData = payment?.result?.payment || payment?.payment;
-const sanitizedPayment = convertBigIntToNumber(paymentData);
-    res.json({ success: true, payment: sanitizedPayment });
+    if (!paymentResult.success) {
+      return res.status(400).json({ success: false, message: "Payment failed" });
+    }
+
+    res.json({ success: true, payment: paymentResult });
 
   } catch (err) {
     console.error("Saved card payment error:", err);
