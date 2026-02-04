@@ -33,6 +33,7 @@ if (isNaN(totalCents) || isNaN(adminCents)) {
       const paymentRequest = {
         sourceId,
         idempotencyKey,
+  customerId, 
 driverSquareAccountId,
         // 🔴 MUST be BigInt in Square v43+
         amountMoney: { amount: BigInt(totalCents), currency: 'CAD' },
