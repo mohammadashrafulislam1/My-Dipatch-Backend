@@ -9,6 +9,10 @@ const squarePaymentSchema = new mongoose.Schema({
     unique: true
   },
   customerId: {
+    type: String,
+    required: true
+  },
+  customerMongoId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true

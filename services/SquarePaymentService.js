@@ -8,7 +8,7 @@ export class SquarePaymentService {
   static async processRidePayment({
     sourceId,
     rideId,
-    customerId,
+    customerId,customerMongoId,
     driverId = null,
     totalAmount,
     driverAmount,
@@ -63,6 +63,7 @@ if (!payment) {
 const paymentRecord = new SquarePaymentModel({
   rideId,
   customerId,
+  customerMongoId,
   driverId,
   totalAmount,
   driverAmount,

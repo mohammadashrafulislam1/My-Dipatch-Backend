@@ -101,6 +101,7 @@ export const payWithSavedCard = async (req, res) => {
       sourceId: card.squareCardId,        // saved card on file
       rideId,
       customerId: squareCustomerId,
+      customerMongoId: user._id,
       totalAmount: parseFloat(totalAmount),
       driverAmount: parseFloat(driverAmount),
       adminAmount: parseFloat(adminAmount),
