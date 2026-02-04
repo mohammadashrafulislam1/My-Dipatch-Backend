@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { createSquareCustomerIfNotExists } from "../SquarePaymentController.js";
 import { UserModel } from "../../Model/User.js";
 import { cardsApi, paymentsApi } from "../../config/square.js";
+import { SquarePaymentService } from "../../services/SquarePaymentService.js";
 
 export const saveUserCard = async (req, res) => {
   try {
