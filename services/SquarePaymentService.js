@@ -16,6 +16,9 @@ export class SquarePaymentService {
     driverSquareAccountId
   }) {
     try {
+     console.log("totalAmount", totalAmount)
+     console.log("adminAmount", adminAmount)
+
       const totalCents = Math.round(parseFloat(totalAmount) * 100);
 const adminCents = Math.round(parseFloat(adminAmount) * 100);
      console.log("totalCents", totalCents)
