@@ -5,7 +5,7 @@ const notificationSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    refPath: 'userRole'
+     ref: 'User'
   },
   userRole: {
     type: String,

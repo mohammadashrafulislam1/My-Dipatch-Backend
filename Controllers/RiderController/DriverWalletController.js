@@ -113,7 +113,6 @@ export const getWalletSummary = async (req, res) => {
 };
 
 // Request withdrawal
-
 export const requestWithdrawal = async (req, res) => {
   try {
     const driverId = req.user.id; // from JWT
