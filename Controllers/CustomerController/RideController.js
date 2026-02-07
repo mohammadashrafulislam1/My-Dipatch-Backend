@@ -118,14 +118,15 @@ setTimeout(async () => {
         status: "active",
       });
 
-      activeDrivers.forEach(async (driver) => {
+      for (const driver of activeDrivers) {
   const userId = driver._id.toString();
+
   if (onlineUsers[userId]) {
     req.io.to(userId).emit("new-ride-request", newRide);
   }
-  
-console.log("createNotification")
-   // 🔹 Create notification for ALL drivers, online or offline
+
+  console.log("createNotification for", userId);
+
   await createNotification({
     userIds: [userId],
     userRole: "driver",
@@ -134,7 +135,7 @@ console.log("createNotification")
     type: "ride_request",
     rideId: newRide._id,
   });
-      });
+}
     }
 
     res.status(201).json({
