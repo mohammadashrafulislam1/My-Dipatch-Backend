@@ -1,5 +1,4 @@
 import axios from "axios";
-import { onlineUsers } from "../../Middleware/socketServer.js";
 import { RideModel } from "../../Model/CustomerModel/Ride.js";
 import { WalletModel } from "../../Model/CustomerModel/Wallet.js";
 import { WalletTransaction } from "../../Model/CustomerModel/WalletTransaction.js";
@@ -7,6 +6,7 @@ import { UserModel } from "../../Model/User.js";
 import { createTransaction } from "../AdminController/WalletController.js";
 import { PricingModel } from "../../Model/AdminModel/Pricing.js";
 import { createNotification } from "../NotificationController.js";
+import { onlineUsers } from "../../Middleware/socketServer.js";
 
 // Create a new ride request
 export const requestRide = async (req, res) => {
@@ -115,9 +115,8 @@ setTimeout(async () => {
     if (req.io) {
       const activeDrivers = await UserModel.find({
         role: "driver",
-        status: "active",
       });
-
+    console.log("activeDrivers", activeDrivers)
       for (const driver of activeDrivers) {
   const userId = driver._id.toString();
 
