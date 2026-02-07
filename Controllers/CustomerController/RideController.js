@@ -110,7 +110,10 @@ setTimeout(async () => {
   }
 }, 10 * 60 * 1000); // 10 minutes in milliseconds
 
-
+    res.status(201).json({
+      message: "Ride request created successfully.",
+      ride: newRide,
+    });
     // Socket emit to active drivers
     if (req.io) {
       const activeDrivers = await UserModel.find({
@@ -136,11 +139,6 @@ setTimeout(async () => {
   });
 }
     }
-
-    res.status(201).json({
-      message: "Ride request created successfully.",
-      ride: newRide,
-    });
 
   } catch (err) {
     console.error("Ride request error:", err);
