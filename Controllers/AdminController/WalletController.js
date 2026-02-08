@@ -59,7 +59,7 @@ export const createTransaction = async (ride) => {
     }
     
     // Calculate earnings
-    const adminCut = ride.price * (pricing.adminCommission / 100);
+    const adminCut = ride.adminCut * (pricing.adminCommission / 100);
     const driverEarning = ride.price - adminCut;
     
     // Create transaction record
@@ -67,7 +67,7 @@ export const createTransaction = async (ride) => {
       rideId: ride._id,
       customerId: ride.customerId,
       driverId: ride.driverId,
-      totalFare: ride.price,
+      totalFare: ride.customerFare,
       driverEarning,
       adminCut
     });
