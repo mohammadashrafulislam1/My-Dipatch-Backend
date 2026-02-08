@@ -7,6 +7,7 @@ import { createTransaction } from "../AdminController/WalletController.js";
 import { PricingModel } from "../../Model/AdminModel/Pricing.js";
 import { createNotification } from "../NotificationController.js";
 import { onlineUsers } from "../../Middleware/socketServer.js";
+import { addRideTransaction } from "../RiderController/DriverWalletController.js";
 
 // Create a new ride request
 export const requestRide = async (req, res) => {
@@ -208,7 +209,7 @@ console.log("Updating timestamps:", ride.timestamps);
     // ===========================
     if (status === "completed") {
       const wallet = await WalletModel.findOne({ userId: ride.customerId });
-     await addRideTransaction.create({
+     await addRideTransaction({
            driverId,
   amount:ride.price,
   rideId:rideId,
