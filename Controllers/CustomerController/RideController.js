@@ -209,14 +209,19 @@ console.log("Updating timestamps:", ride.timestamps);
     // ===========================
     if (status === "completed") {
       const wallet = await WalletModel.findOne({ userId: ride.customerId });
-     await addRideTransaction({
-           driverId,
-  amount:ride.price,
-  rideId:rideId,
-  method:"card",
-  status:"completed",
-  type:"ride",
-        })
+     if (!ride.driverId) {
+  throw new Error("Ride has no assigned driver");
+}
+
+await addRideTransaction({
+  driverId: ride.driverId,   // 🔒 ONLY trust DB value
+  amount: ride.price,
+  rideId: rideId,
+  method: "card",
+  status: "completed",
+  type: "ride",
+});
+
       if (wallet && ride.price && wallet.balance >= ride.price) {
         wallet.balance -= ride.price;
         await wallet.save();
