@@ -228,9 +228,10 @@ await addRideTransaction({
         
         await WalletTransaction.create({
           userId: ride.customerId,
-          amount: ride.price,
+          amount: ride.customerFare,
           type: "ride_fare",
           metadata: { rideId },
+  status: "success", 
         });
       }
 
