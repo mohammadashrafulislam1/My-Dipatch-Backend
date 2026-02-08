@@ -218,7 +218,7 @@ await addRideTransaction({
   amount: ride.price,
   rideId: rideId,
   method: "card",
-  status: "completed",
+  status: "pending",
   type: "ride",
 });
 

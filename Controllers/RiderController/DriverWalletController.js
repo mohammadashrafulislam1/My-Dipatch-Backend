@@ -13,7 +13,7 @@ export const addRideTransaction = async ({
   amount,
   rideId = null,
   method = "card",
-  status = "completed",
+  status = "pending",
   type = "ride",
 }) => {
   try {
