@@ -208,11 +208,18 @@ console.log("Updating timestamps:", ride.timestamps);
     // ===========================
     if (status === "completed") {
       const wallet = await WalletModel.findOne({ userId: ride.customerId });
-
+     await addRideTransaction.create({
+           driverId,
+  amount:ride.price,
+  rideId:rideId,
+  method:"card",
+  status:"completed",
+  type:"ride",
+        })
       if (wallet && ride.price && wallet.balance >= ride.price) {
         wallet.balance -= ride.price;
         await wallet.save();
-
+        
         await WalletTransaction.create({
           userId: ride.customerId,
           amount: ride.price,
