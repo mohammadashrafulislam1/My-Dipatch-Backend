@@ -53,11 +53,11 @@ export const addRideTransaction = async ({
     wallet.transactions.push(transaction);
 
     // ✅ Wallet balance logic
-    if (type === "ride" && status === "completed") {
+    if (type === "ride" && (status === "pending" || status === "approved" )) {
       wallet.totalEarnings += amount;
     }
 
-    if (type === "withdrawal" && status === "approved") {
+    if (type === "withdrawal" && status === "paid") {
       wallet.totalWithdrawn += amount;
     }
 
