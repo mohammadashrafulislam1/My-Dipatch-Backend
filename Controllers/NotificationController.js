@@ -3,6 +3,7 @@ import { emitNotificationToUser } from "../Middleware/notification.socket.js";
 import { Notification } from "../Model/Notification.js";
 import { UserModel } from "../Model/User.js";
 import { generateEmailTemplate } from "../utils/emailTemplates.js";
+import { sendEmail } from "../utils/sendEmail.js";
 
 export const createNotification = async ({
   userIds = [],          // array (supports multi-user)
