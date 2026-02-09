@@ -59,7 +59,7 @@ export const createTransaction = async (ride) => {
     }
     
     // Calculate earnings
-    const adminCut = ride.adminCut * (pricing.adminCommission / 100);
+    const adminCut = ride.adminCut;
     const driverEarning = ride.price - adminCut;
     
     // Create transaction record

@@ -67,7 +67,9 @@ export class SquarePaymentController {
         driverId,
         amount: payment.driverAmount,
         rideId,
-        method: "square",
+        method: "bank",
+  status: "paid",
+  type: "withdrawal",
       });
 // ✅ Notify driver
 await createNotification({
@@ -82,6 +84,14 @@ await createNotification({
     } catch (err) {
       console.error("markDriverPaid error:", err);
       res.status(500).json({ success: false, message: err.message });
+      await addRideTransaction({
+        driverId,
+        amount: 0,
+        rideId,
+        method: "bank",
+  status: "rejected",
+  type: "withdrawal",
+      });
     }
   }
 
@@ -319,7 +329,9 @@ await createNotification({
       await addRideTransaction({
         driverId,
         amount: Number(amount),
-        method: "bank_withdrawal",
+        method: "withdrawal",
+        method: "bank",
+  status: "approved",
         rideId: null,
       });
 // ✅ Notify driver
@@ -335,6 +347,14 @@ await createNotification({
     } catch (err) {
       console.error("Withdraw error:", err);
       res.status(500).json({ success: false, message: err.message });
+       await addRideTransaction({
+        driverId,
+        amount: 0,
+        method: "withdrawal",
+        method: "bank",
+  status: "rejected",
+        rideId: null,
+      });
     }
   }
 }
