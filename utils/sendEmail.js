@@ -16,7 +16,6 @@ export const sendEmail = async ({ to, subject, html }) => {
       from: `"LocalRun" <${process.env.SMTP_USER}>`,
       to,
       subject,
-      text,
       html,
     });
   } catch (err) {
