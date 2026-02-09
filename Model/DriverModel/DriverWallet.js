@@ -22,7 +22,7 @@ const transactionSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["pending", "approved", "paid", "rejected"],
+    enum: ["pending", "request", "approved", "paid", "rejected"],
   },
   createdAt: {
     type: Date,
