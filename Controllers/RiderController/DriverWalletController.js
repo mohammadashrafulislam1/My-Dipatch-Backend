@@ -58,6 +58,9 @@ export const addRideTransaction = async ({
       wallet.totalEarnings -= amount; // deduct from available earnings
       // totalWithdrawn will be increased only when status becomes "paid"
     }
+    if (type === "withdrawal" && status === "request") {
+      wallet.totalWithdrawn += amount; // mark as withdrawn
+    }
 
     if (type === "withdrawal" && status === "paid") {
       wallet.totalWithdrawn += amount; // mark as withdrawn
