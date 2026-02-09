@@ -151,14 +151,10 @@ export const requestWithdrawal = async (req, res) => {
       await wallet.save();
     }
 
-    const pendingWithdrawals = wallet.transactions
-      .filter(tx => tx.type === "withdrawal" && tx.status === "pending")
-      .reduce((sum, tx) => sum + tx.amount, 0);
+  if (amount > wallet.totalEarnings) {
+  return res.status(400).json({ success: false, message: "Insufficient balance" });
+}
 
-    const availableBalance = wallet.totalEarnings - wallet.totalWithdrawn - pendingWithdrawals;
-    if (amount > availableBalance) {
-      return res.status(400).json({ success: false, message: "Insufficient balance" });
-    }
 
     const bankAccount = await DriverSquareAccount.findOne({ driverId: driverObjectId });
     if (!bankAccount) {
