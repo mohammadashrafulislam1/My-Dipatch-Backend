@@ -11,5 +11,6 @@ driverRouter.get("/available", getAvailableRides);
 driverRouter.post("/square-payout", verifyToken(), SquarePaymentController.saveSquarePayout);
 driverRouter.put("/accept/:rideId", acceptRide);
 driverRouter.get("/history/:driverId", getDriverRideHistory);
+driverRouter.get("/square-payout", verifyToken(), SquarePaymentController.getSquarePayouts);
 driverRouter.get("/earnings/:driverId", getDriverEarnings);
 driverRouter.get("/orders/:driverId", getDriverOrderHistory);

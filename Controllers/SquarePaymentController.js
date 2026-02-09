@@ -280,6 +280,27 @@ await createNotification({
   }
 }
 
+// Controller method
+static async getSquarePayouts(req, res) {
+  try {
+    const driverId = req.user.id;
+
+    // Fetch all saved payout methods for this driver
+    const bankAccounts = await DriverSquareAccount.find({ driverId }).sort({ createdAt: -1 });
+
+    if (!bankAccounts || bankAccounts.length === 0) {
+      return res.status(404).json({ success: false, message: "No bank accounts found" });
+    }
+
+    res.json({
+      success: true,
+      bankAccounts,
+    });
+  } catch (err) {
+    console.error("getSquarePayouts error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+}
 
   // ------------------ WITHDRAW TO BANK ------------------
   static async withdrawToBank(req, res) {
