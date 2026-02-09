@@ -13,9 +13,10 @@ const transporter = nodemailer.createTransport({
 export const sendEmail = async ({ to, subject, html }) => {
   try {
     await transporter.sendMail({
-      from: `"LocalRun Support" <${process.env.SMTP_USER}>`,
+      from: `"LocalRun" <${process.env.SMTP_USER}>`,
       to,
       subject,
+      text,
       html,
     });
   } catch (err) {

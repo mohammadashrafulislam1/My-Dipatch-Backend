@@ -1,12 +1,14 @@
 // controllers/notificationController.js
 import { emitNotificationToUser } from "../Middleware/notification.socket.js";
 import { Notification } from "../Model/Notification.js";
+import { generateEmailTemplate } from "../utils/emailTemplates.js";
 
 export const createNotification = async ({
   userIds = [],          // array (supports multi-user)
   userRole,
-  title,
-  message,
+  title,        // send email title
+  subtitle,     // send email subtitle
+  message,      // main content/body
   type = "system",
   rideId = null,
   metadata = {}
@@ -31,7 +33,9 @@ export const createNotification = async ({
 
     for (const userId of userIds) {
       console.log(`Creating notification for userId: ${userId}`);
-
+     const user = await UserModel.findById(userId); // get email
+      if (!user) continue;
+      
       try {
         const notification = await Notification.create({
           userId,
@@ -51,6 +55,20 @@ export const createNotification = async ({
         // 🔥 emit realtime
         console.log(`Emitting notification to user ${userId}`);
         emitNotificationToUser(userId, "new-notification", notification);
+ // Send email
+        if (user.email) {
+          const emailHtml = generateEmailTemplate({
+            title,                       // email title
+            subtitle: subtitle || `Hi ${user.name || "there"}, you have a new notification!`,
+            bodyContent: `<p>${message}</p>`,
+          });
+
+          await sendEmail({
+            to: user.email,
+            subject: title,              // email subject same as title
+            html: emailHtml,
+          });
+        }
 
       } catch (innerErr) {
         console.error(`❌ Failed to save notification for user ${userId}:`, innerErr);
