@@ -1,24 +1,16 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-console.log("process.env.SMTP_USER", process.env.SMTP_USER)
-console.log("process.env.SMTP_PASS", process.env.SMTP_PASS)
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // MUST be true for 465
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS, // App Password, NOT your real password
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 export const sendEmail = async ({ to, subject, html }) => {
   try {
-    await transporter.sendMail({
-      from: `"LocalRun" <${process.env.SMTP_USER}>`,
+    await resend.emails.send({
+      from: "onboarding@resend.dev", // default test domain
       to,
       subject,
       html,
     });
+    console.log("✅ Email sent to", to);
   } catch (err) {
     console.error("Email send error:", err);
   }
