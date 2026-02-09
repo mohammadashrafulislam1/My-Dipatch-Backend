@@ -1,6 +1,7 @@
 // controllers/notificationController.js
 import { emitNotificationToUser } from "../Middleware/notification.socket.js";
 import { Notification } from "../Model/Notification.js";
+import { UserModel } from "../Model/User.js";
 import { generateEmailTemplate } from "../utils/emailTemplates.js";
 
 export const createNotification = async ({
