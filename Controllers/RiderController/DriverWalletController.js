@@ -17,7 +17,6 @@ export const addRideTransaction = async ({
   type = "ride",
 }) => {
   try {
-    // ✅ Validate inputs
     if (!mongoose.Types.ObjectId.isValid(driverId)) {
       throw new Error("Invalid driverId");
     }
@@ -27,8 +26,6 @@ export const addRideTransaction = async ({
     }
 
     const driverObjectId = new mongoose.Types.ObjectId(driverId);
-
-    // ✅ Find or create wallet
     let wallet = await DriverWallet.findOne({ driverId: driverObjectId });
 
     if (!wallet) {
@@ -40,29 +37,33 @@ export const addRideTransaction = async ({
       });
     }
 
-    // ✅ Create transaction
     const transaction = {
-      type,                     // ride | withdrawal
+      type,
       rideId,
       amount,
-      method,                   // card | cash | withdrawal
-      status,                   // completed | pending | approved | rejected
+      method,
+      status,
       createdAt: new Date(),
     };
 
     wallet.transactions.push(transaction);
 
-    // ✅ Wallet balance logic
-    if (type === "ride" && (status === "pending" )) {
+    // Wallet balance logic
+    if (type === "ride" && status === "pending") {
       wallet.totalEarnings += amount;
     }
 
+    // For withdrawal requests, mark as "pending deduction"
+    if (type === "withdrawal" && status === "request") {
+      wallet.totalEarnings -= amount; // deduct from available earnings
+      // totalWithdrawn will be increased only when status becomes "paid"
+    }
+
     if (type === "withdrawal" && status === "paid") {
-      wallet.totalWithdrawn -= amount;
+      wallet.totalWithdrawn += amount; // mark as withdrawn
     }
 
     await wallet.save();
-
     console.log("Wallet transaction added:", transaction);
     return transaction;
   } catch (error) {
