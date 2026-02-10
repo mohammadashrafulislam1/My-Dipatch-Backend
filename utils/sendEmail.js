@@ -10,17 +10,19 @@ console.log("Is SMTP_PASS defined?:", !!process.env.SMTP_PASS);
  * Ensure SMTP_PASS is a 16-character Google App Password.
  */
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
+  // Using the literal IPv4 address can bypass DNS/IPv6 issues
+  host: "smtp.gmail.com", 
   port: 465,
-  secure: true, // true for 465, false for other ports
+  secure: true,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS, 
   },
-  // Increased timeouts to handle slow network handshakes
-  connectionTimeout: 10000, 
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
+  // This is the key fix for Render/Cloud timeouts:
+  connectionTimeout: 20000, 
+  greetingTimeout: 20000,
+  socketTimeout: 25000,
+  dnsTimeout: 10000,
 });
 
 /**
