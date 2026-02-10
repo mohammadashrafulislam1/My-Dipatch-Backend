@@ -4,23 +4,12 @@ import 'dotenv/config';
 // Add this temporarily to your sendEmail function to debug
 console.log("Attempting to send from:", process.env.SMTP_USER);
 console.log("Is SMTP_PASS defined?:", !!process.env.SMTP_PASS);
-/**
- * TRANSPORTER CONFIGURATION
- * Using host/port explicitly is more reliable on cloud platforms like Render.
- * Ensure SMTP_PASS is a 16-character Google App Password.
- */
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587, // Try this first - most cloud-friendly
-  secure: false, // false for port 587
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false, // Sometimes needed
-  },
-  connectionTimeout: 30000,
+    service: 'Gmail', // or another email service provider
+    auth: {
+        user: process.env.SMTP_USER, // Your email address
+        pass: process.env.SMTP_PASS, // Your email password or app password
+    },
 });
 
 /**
@@ -29,10 +18,10 @@ const transporter = nodemailer.createTransport({
 export const sendEmail = async ({ to, subject, html }) => {
   try {
     const info = await transporter.sendMail({
-      from: `"Ride App" <${process.env.SMTP_USER}>`,
+      from: `<${process.env.SMTP_USER}>`,
       to,
       subject,
-      html,
+      html:html,
     });
 
     console.log("✅ Email sent successfully:", info.messageId);
